@@ -31,6 +31,7 @@ fn main() {
     let nx = 200;
     let ny = 100;
     let ns = 100; // samples per pixel
+    let max_depth: u32 = 8; // configurable bounce limit
 
     let white = Vec3::new(1.0, 1.0, 1.0);
     let blue = Vec3::new(0.5, 0.7, 1.0);
@@ -43,9 +44,13 @@ fn main() {
     // scene setup
     let mut scene = Vec::<Box<dyn Hittable>>::new();
     let sphere = types::sphere::Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5, None);
+    let left_sphere = types::sphere::Sphere::new(&Vec3::new(-1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&Vec3::new(0.8, 0.6, 0.2), 0.3))));
+    let right_sphere = types::sphere::Sphere::new(&Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&Vec3::new(0.1, 0.2, 0.5), 1.0))));
     let world = types::sphere::Sphere::new(&Vec3::new(0.0, -100.5, -1.0), 100.0, None);
     let skybox = types::skybox::Skybox::new(&blue, &white);
     scene.push(Box::new(sphere));
+    scene.push(Box::new(left_sphere));
+    scene.push(Box::new(right_sphere));
     scene.push(Box::new(world));
     scene.push(Box::new(skybox));
 
@@ -61,7 +66,7 @@ fn main() {
                 let hit_record = hit(&r, &scene);
 
                 if let Some(hit_record) = hit_record {
-                    col = col + hit_record.sampleable.sample(&mut rng, &hit_record, &scene);
+                    col = col + hit_record.sampleable.sample(&mut rng, &hit_record, &scene, max_depth);
                 }
             }
             col = col / ns as f32;

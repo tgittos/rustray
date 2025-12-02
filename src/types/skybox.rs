@@ -26,13 +26,13 @@ fn skybox_sample(skybox: &Skybox, hit_record: &HitRecord) -> Vec3 {
 }
 
 impl Sampleable for Skybox {
-    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>) -> Vec3 {
+    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>, _depth: u32) -> Vec3 {
         skybox_sample(self, hit_record)
     }
 }
 
 impl Sampleable for &Skybox {
-    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>) -> Vec3 {
+    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>, _depth: u32) -> Vec3 {
         skybox_sample(self, hit_record)
     }
 }
@@ -48,6 +48,7 @@ impl Hittable for Skybox {
         let point = ray.point_at(1.0); // arbitrary point along the ray
         let normal = Vec3::new(0.0, 0.0, 0.0); // normal is not used for skybox
         Some(HitRecord {
+            ray: ray.clone(),
             t,
             point,
             normal,

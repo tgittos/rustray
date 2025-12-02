@@ -220,6 +220,10 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
     }
 }
 
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - 2.0 * v.dot(n) * (*n)
+}
+
 pub fn random_in_unit_sphere<R: rand::Rng>(rng: &mut R) -> Vec3 {
     loop {
         let p = Vec3::new(

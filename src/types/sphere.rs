@@ -21,14 +21,14 @@ impl Sphere {
 }
 
 impl Sampleable for Sphere {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>) -> Vec3 {
-        self.material.sample(rng, hit_record, scene)
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+        self.material.sample(rng, hit_record, scene, depth)
     }
 }
 
 impl Sampleable for &Sphere {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>) -> Vec3 {
-        self.material.sample(rng, hit_record, scene)
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+        self.material.sample(rng, hit_record, scene, depth)
     }
 }
 
@@ -44,13 +44,13 @@ impl Hittable for Sphere {
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(HitRecord { t: temp, point, normal, sampleable: self });
+                return Some(HitRecord { ray: ray.clone(), t: temp, point, normal, sampleable: self });
             }
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(HitRecord { t: temp, point, normal, sampleable: self });
+                return Some(HitRecord { ray: ray.clone(), t: temp, point, normal, sampleable: self });
             }
         }
         None
