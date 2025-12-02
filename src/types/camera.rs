@@ -1,6 +1,3 @@
-use crate::Vec3;
-use crate::Ray;
-
 #[derive(Debug)]
 pub struct Camera {
     pub origin: crate::Vec3,

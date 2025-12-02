@@ -1,48 +1,53 @@
 mod formats;
 mod types;
 mod traits;
+mod materials;
 
 use rand::prelude::*;
 
 use formats::ppm;
 use types::vec::Vec3;
 use types::ray::Ray;
+use traits::hittable::HitRecord;
 use traits::hittable::Hittable;
 
-
-fn sample(ray: &types::ray::Ray, scene: &Vec<Box<dyn Hittable>>) -> Vec3 {
-    let unit_direction = types::vec::unit_vector(&ray.direction);
-    let t = 0.5 * (unit_direction.y + 1.0);
-    let white = Vec3::new(1.0, 1.0, 1.0);
-    let blue = Vec3::new(0.5, 0.7, 1.0);
+fn hit<'a>(ray: &Ray, scene: &'a Vec<Box<dyn Hittable>>) -> Option<HitRecord<'a>> {
+    let mut closest_so_far = f32::MAX;
+    let mut hit_record: Option<HitRecord<'a>> = None;
 
     for object in scene {
-        if let Some(hit_record) = object.hit(ray, 0.0, f32::MAX) {
-            return Vec3::new(hit_record.normal.x + 1.0, hit_record.normal.y + 1.0, hit_record.normal.z + 1.0) / 2.0;
+        if let Some(record) = object.hit(ray, 0.0, closest_so_far) {
+            closest_so_far = record.t;
+            hit_record = Some(record);
         }
     }
 
-    // lerp blue and white
-    white * (1.0 - t) + blue * t
+    hit_record
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let nx = 200;
     let ny = 100;
     let ns = 100; // samples per pixel
 
+    let white = Vec3::new(1.0, 1.0, 1.0);
+    let blue = Vec3::new(0.5, 0.7, 1.0);
+
     println!("Writing sample PPM image...");
     let mut ppm_image = ppm::new_ppm_image(nx, ny, None);
 
-    // scene setup
     let camera = types::camera::Camera::new();
-    let mut scene = (Vec::<Box<dyn Hittable>>::new());
-    let sphere = types::sphere::Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5);
-    let world = types::sphere::Sphere::new(&Vec3::new(0.0, -100.5, -1.0), 100.0);
+
+    // scene setup
+    let mut scene = Vec::<Box<dyn Hittable>>::new();
+    let sphere = types::sphere::Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5, None);
+    let world = types::sphere::Sphere::new(&Vec3::new(0.0, -100.5, -1.0), 100.0, None);
+    let skybox = types::skybox::Skybox::new(&blue, &white);
     scene.push(Box::new(sphere));
     scene.push(Box::new(world));
+    scene.push(Box::new(skybox));
 
     // fill with data
     for y in 0..ppm_image.height {
@@ -53,7 +58,11 @@ fn main() {
                 let v = (y as f32 + rng.random::<f32>()) / ppm_image.height as f32;
 
                 let r = camera.get_ray(u, v);
-                col = col + sample(&r, &scene);
+                let hit_record = hit(&r, &scene);
+
+                if let Some(hit_record) = hit_record {
+                    col = col + hit_record.sampleable.sample(&mut rng, &hit_record, &scene);
+                }
             }
             col = col / ns as f32;
 
@@ -69,5 +78,3 @@ fn main() {
         Err(e) => eprintln!("Error writing PPM image: {}", e),
     }
 }
-
-

@@ -219,3 +219,16 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
         z: v.z / len,
     }
 }
+
+pub fn random_in_unit_sphere<R: rand::Rng>(rng: &mut R) -> Vec3 {
+    loop {
+        let p = Vec3::new(
+            rng.random_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
+        );
+        if p.squared_length() < 1.0 {
+            return p;
+        }
+    }
+}
