@@ -65,6 +65,7 @@ fn main() {
                 }
             }
             col = col / ns as f32;
+            col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt()); // gamma correction
 
             let offset = (y * ppm_image.width + x) * 3;
             ppm_image.data[offset] = (col.x * 255.99) as u8; // R
