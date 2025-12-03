@@ -1,5 +1,5 @@
-use crate::types::vec::Vec3;
-use crate::types::ray::Ray;
+use crate::core::vec;
+use crate::core::ray;
 use crate::traits::hittable::HitRecord;
 use crate::traits::hittable::Hittable;
 
@@ -18,7 +18,7 @@ impl Scene {
 }
 
 impl Hittable for Scene {
-    fn hit<'a>(&'a self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
+    fn hit<'a>(&'a self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
         let mut closest_so_far = t_max;
         let mut hit_record: Option<HitRecord<'a>> = None;
 

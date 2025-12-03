@@ -1,15 +1,15 @@
+use crate::vec;
+use crate::ray;
 use crate::traits::sampleable::Sampleable;
-use crate::Vec3;
-use crate::Ray;
 
 pub struct HitRecord<'a> {
-    pub ray: Ray,
+    pub ray: ray::Ray,
     pub t: f32,
-    pub point: Vec3,
-    pub normal: Vec3,
+    pub point: vec::Vec3,
+    pub normal: vec::Vec3,
     pub sampleable: &'a dyn Sampleable,
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'_>>;
+    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'_>>;
 }

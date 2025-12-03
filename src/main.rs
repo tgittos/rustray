@@ -1,5 +1,6 @@
 mod formats;
 
+use rustray::core;
 use rustray::raytrace;
 use rustray::types;
 use rustray::materials;
@@ -20,9 +21,9 @@ fn main() {
 
     // scene setup
     let camera_config = types::camera::CameraConfig {
-        origin: types::vec::Vec3::new(0.0, 0.0, 0.0),
-        look_at: types::vec::Vec3::new(0.0, 0.0, -1.0),
-        up: types::vec::Vec3::new(0.0, 1.0, 0.0),
+        origin: core::vec::Vec3::new(0.0, 0.0, 0.0),
+        look_at: core::vec::Vec3::new(0.0, 0.0, -1.0),
+        up: core::vec::Vec3::new(0.0, 1.0, 0.0),
         aspect_ratio: nx as f32 / ny as f32,
         viewport_height: 2.0,
         focal_length: 1.0,
@@ -31,11 +32,11 @@ fn main() {
     };
     let camera = types::camera::Camera::with_config(camera_config);
     let mut scene = types::scene::Scene::new();
-    let sphere = types::sphere::Sphere::new(&types::vec::Vec3::new(0.0, 0.0, -1.0), 0.5, None);
-    let left_sphere = types::sphere::Sphere::new(&types::vec::Vec3::new(-1.0, 0.0, -1.0), -0.5, Some(Box::new(materials::dielectric::Dielectric::new(1.5))));
-    let right_sphere = types::sphere::Sphere::new(&types::vec::Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&types::vec::Vec3::new(0.1, 0.2, 0.5), 0.0))));
-    let world = types::sphere::Sphere::new(&types::vec::Vec3::new(0.0, -100.5, -1.0), 100.0, Some(Box::new(materials::diffuse::Diffuse::new(&types::vec::Vec3::new(0.8, 0.8, 0.0)))));
-    let skybox = types::skybox::Skybox::new(&types::vec::Vec3::new(0.5, 0.7, 1.0), &types::vec::Vec3::new(1.0, 1.0, 1.0));
+    let sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(0.0, 0.0, -1.0), 0.5, None);
+    let left_sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(-1.0, 0.0, -1.0), -0.5, Some(Box::new(materials::dielectric::Dielectric::new(1.5))));
+    let right_sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&core::vec::Vec3::new(0.1, 0.2, 0.5), 0.0))));
+    let world = types::sphere::Sphere::new(&core::vec::Vec3::new(0.0, -100.5, -1.0), 100.0, Some(Box::new(materials::diffuse::Diffuse::new(&core::vec::Vec3::new(0.8, 0.8, 0.0)))));
+    let skybox = types::skybox::Skybox::new(&core::vec::Vec3::new(0.5, 0.7, 1.0), &core::vec::Vec3::new(1.0, 1.0, 1.0));
     scene.add_object(Box::new(sphere));
     scene.add_object(Box::new(left_sphere));
     scene.add_object(Box::new(right_sphere));

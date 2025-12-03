@@ -1,8 +1,7 @@
 use rand::Rng;
 
-use crate::types::vec::Vec3;
-use crate::types::vec;
-use crate::types::ray::Ray;
+use crate::core::vec;
+use crate::core::ray;
 use crate::types::scene::Scene;
 use crate::traits::hittable::Hittable;
 use crate::traits::hittable::HitRecord;
@@ -18,11 +17,11 @@ impl Dielectric {
     }
 }
 
-fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Scene, depth: u32) -> Vec3 {
-    let reflected = crate::types::vec::reflect(&crate::types::vec::unit_vector(&hit_record.ray.direction), &hit_record.normal);
+fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Scene, depth: u32) -> vec::Vec3 {
+    let reflected = vec::reflect(&vec::unit_vector(&hit_record.ray.direction), &hit_record.normal);
     let outward_normal;
     let ni_over_nt;
-    let attenuation = Vec3::new(1.0, 1.0, 1.0);
+    let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);
     let cosine;
 
     if hit_record.ray.direction.dot(&hit_record.normal) > 0.0 {
@@ -55,26 +54,26 @@ fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRn
     };
 
     if depth == 0 {
-        return Vec3::new(0.0, 0.0, 0.0);
+        return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
-    let scene_hit = scene.hit(&Ray::new(&hit_record.point, &scatter_direction), 0.001, f32::MAX);
+    let scene_hit = scene.hit(&ray::Ray::new(&hit_record.point, &scatter_direction), 0.001, f32::MAX);
     if let Some(new_hit_record) = scene_hit {
         let bounce = new_hit_record.sampleable.sample(rng, &new_hit_record, scene, depth - 1);
         attenuation * bounce
     } else {
-        Vec3::new(0.0, 0.0, 0.0)
+        vec::Vec3::new(0.0, 0.0, 0.0)
     }
 }
 
 impl Sampleable for Dielectric {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
         dielectric_sample(self, rng, hit_record, scene, depth)
     }
 }
 
 impl Sampleable for &Dielectric {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
         dielectric_sample(self, rng, hit_record, scene, depth)
     }
 }

@@ -1,11 +1,12 @@
+pub mod core;
 pub mod types;
 pub mod traits;
 pub mod materials;
 
 use rand::Rng;
 
-use crate::types::vec::Vec3;
-use crate::types::ray::Ray;
+use crate::core::vec;
+use crate::core::ray;
 use crate::types::camera::Camera;
 use crate::types::scene::Scene;
 use crate::traits::hittable::Hittable;
@@ -26,7 +27,7 @@ pub fn raytrace(
 
     for y in 0..height {
         for x in 0..width {
-            let mut col = Vec3::new(0.0, 0.0, 0.0);
+            let mut col = vec::Vec3::new(0.0, 0.0, 0.0);
             for _s in 0..ns {
                 let u = (x as f32 + rng.random::<f32>()) / width as f32;
                 let v = (y as f32 + rng.random::<f32>()) / height as f32;
@@ -38,7 +39,7 @@ pub fn raytrace(
                 }
             }
             col = col / ns as f32;
-            col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt()); // gamma correction
+            col = vec::Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt()); // gamma correction
 
             let offset = (y * width + x) * 3;
             data[offset as usize] = (col.x * 255.99) as u8; // R

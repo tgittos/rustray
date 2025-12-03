@@ -1,4 +1,4 @@
-use crate::types::vec::Vec3;
+use crate::core::vec;
 use crate::types::scene::Scene;
 use crate::traits::hittable::Hittable;
 use crate::traits::hittable::HitRecord;
@@ -10,5 +10,5 @@ pub trait Sampleable {
         hit_record: &HitRecord<'_>,
         scene: &Scene,
         depth: u32,
-    ) -> Vec3;
+    ) -> vec::Vec3;
 }

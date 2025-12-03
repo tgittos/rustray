@@ -1,9 +1,10 @@
-use crate::types::vec::Vec3;
+use crate::core::vec;
+use crate::core::ray;
 
 pub struct CameraConfig {
-    pub origin: Vec3,
-    pub look_at: Vec3,
-    pub up: Vec3,
+    pub origin: vec::Vec3,
+    pub look_at: vec::Vec3,
+    pub up: vec::Vec3,
     pub aspect_ratio: f32,
     pub viewport_height: f32,
     pub focal_length: f32,
@@ -13,11 +14,11 @@ pub struct CameraConfig {
 
 #[derive(Debug)]
 pub struct Camera {
-    pub origin: Vec3,
-    pub lower_left_corner: Vec3,
-    pub horizontal: Vec3,
-    pub vertical: Vec3,
-    pub up: Vec3,
+    pub origin: vec::Vec3,
+    pub lower_left_corner: vec::Vec3,
+    pub horizontal: vec::Vec3,
+    pub vertical: vec::Vec3,
+    pub up: vec::Vec3,
     pub focal_length: f32,
     pub aperture: f32,
     pub vertical_fov: f32,
@@ -26,9 +27,9 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Camera::with_config(CameraConfig {
-            origin: Vec3::new(0.0, 0.0, 0.0),
-            look_at: Vec3::new(0.0, 0.0, -1.0),
-            up: Vec3::new(0.0, 1.0, 0.0),
+            origin: vec::Vec3::new(0.0, 0.0, 0.0),
+            look_at: vec::Vec3::new(0.0, 0.0, -1.0),
+            up: vec::Vec3::new(0.0, 1.0, 0.0),
             aspect_ratio: 16.0 / 9.0,
             viewport_height: 2.0,
             focal_length: 1.0,
@@ -64,7 +65,7 @@ impl Camera {
         camera
     }
 
-    pub fn look_at(&mut self, val: &Vec3) {
+    pub fn look_at(&mut self, val: &vec::Vec3) {
         let w = (self.origin - *val).normalize();
         let u = self.up.cross(&w).normalize();
         let v = w.cross(&u);
@@ -77,11 +78,11 @@ impl Camera {
         self.lower_left_corner = self.origin - (self.horizontal / 2.0) - (self.vertical / 2.0) - w * self.focal_length;
     }
 
-    pub fn get_ray(&self, u: f32, v: f32) -> crate::Ray {
+    pub fn get_ray(&self, u: f32, v: f32) -> ray::Ray {
         let lens_radius = self.aperture / 2.0;
-        let rd = lens_radius * crate::types::vec::random_in_unit_disk(&mut rand::rng());
+        let rd = lens_radius * vec::random_in_unit_disk(&mut rand::rng());
         let offset = self.up.cross(&((self.horizontal).normalize())) * rd.x + self.up.cross(&((self.vertical).normalize())) * rd.y;
-        crate::Ray {
+        ray::Ray {
             origin: self.origin + offset,
             direction: self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset,
         }
