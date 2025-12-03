@@ -1,6 +1,7 @@
 use crate::types::vec::Vec3;
 use crate::types::vec;
 use crate::types::ray::Ray;
+use crate::types::scene::Scene;
 use crate::traits::hittable::Hittable;
 use crate::traits::hittable::HitRecord;
 use crate::traits::sampleable::Sampleable;
@@ -16,7 +17,7 @@ impl Metallic {
     }
 }
 
-fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Scene, depth: u32) -> Vec3 {
     if depth == 0 {
         return Vec3::new(0.0, 0.0, 0.0);
     }
@@ -27,11 +28,9 @@ fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit
     let mut closest_so_far = f32::MAX;
     let mut new_hit_record: Option<HitRecord<'a>> = None;
 
-    for object in scene {
-        if let Some(record) = object.hit(&scattered, 0.001, closest_so_far) {
-            closest_so_far = record.t;
-            new_hit_record = Some(record);
-        }
+    if let Some(record) = scene.hit(&scattered, 0.001, closest_so_far) {
+        closest_so_far = record.t;
+        new_hit_record = Some(record);
     }
 
     if new_hit_record.is_none() {
@@ -44,13 +43,13 @@ fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit
 }
 
 impl Sampleable for Metallic {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
         metallic_sample(self, rng, hit_record, scene, depth)
     }
 }
 
 impl Sampleable for &Metallic {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
         metallic_sample(self, rng, hit_record, scene, depth)
     }
 }

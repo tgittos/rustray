@@ -1,6 +1,7 @@
 use crate::Vec3;
 use crate::Ray;
 use crate::types::vec;
+use crate::types::scene::Scene;
 use crate::traits::hittable::HitRecord;
 use crate::traits::hittable::Hittable;
 use crate::traits::sampleable::Sampleable;
@@ -26,13 +27,13 @@ fn skybox_sample(skybox: &Skybox, hit_record: &HitRecord) -> Vec3 {
 }
 
 impl Sampleable for Skybox {
-    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>, _depth: u32) -> Vec3 {
+    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Scene, _depth: u32) -> Vec3 {
         skybox_sample(self, hit_record)
     }
 }
 
 impl Sampleable for &Skybox {
-    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Vec<Box<dyn Hittable>>, _depth: u32) -> Vec3 {
+    fn sample(&self, _rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, _scene: &Scene, _depth: u32) -> Vec3 {
         skybox_sample(self, hit_record)
     }
 }

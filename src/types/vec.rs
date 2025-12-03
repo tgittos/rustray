@@ -199,6 +199,18 @@ impl ops::Div<f32> for &Vec3 {
     }
 }
 
+impl ops::Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Vec3 {
+        Vec3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
 impl Clone for Vec3 {
     fn clone(&self) -> Self {
         Vec3 {
@@ -220,10 +232,6 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
     }
 }
 
-pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
-    *v - 2.0 * v.dot(n) * (*n)
-}
-
 pub fn random_in_unit_sphere<R: rand::Rng>(rng: &mut R) -> Vec3 {
     loop {
         let p = Vec3::new(
@@ -234,5 +242,20 @@ pub fn random_in_unit_sphere<R: rand::Rng>(rng: &mut R) -> Vec3 {
         if p.squared_length() < 1.0 {
             return p;
         }
+    }
+}
+
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - 2.0 * v.dot(n) * (*n)
+}
+
+pub fn refract(v: &Vec3, n: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
+    let uv = unit_vector(v);
+    let dt = uv.dot(n);
+    let discriminant = 1.0 - ni_over_nt * ni_over_nt * (1.0 - dt * dt);
+    if discriminant > 0.0 {
+        Some(ni_over_nt * (uv - *n * dt) - *n * discriminant.sqrt())
+    } else {
+        None
     }
 }

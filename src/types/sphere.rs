@@ -1,5 +1,6 @@
 use crate::Vec3;
 use crate::Ray;
+use crate::types::scene::Scene;
 use crate::traits::hittable::Hittable;
 use crate::traits::sampleable::Sampleable;
 use crate::traits::hittable::HitRecord;
@@ -21,13 +22,13 @@ impl Sphere {
 }
 
 impl Sampleable for Sphere {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
         self.material.sample(rng, hit_record, scene, depth)
     }
 }
 
 impl Sampleable for &Sphere {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Vec<Box<dyn Hittable>>, depth: u32) -> Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> Vec3 {
         self.material.sample(rng, hit_record, scene, depth)
     }
 }

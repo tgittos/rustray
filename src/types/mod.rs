@@ -3,3 +3,4 @@ pub mod ray;
 pub mod sphere;
 pub mod camera;
 pub mod skybox;
+pub mod scene;

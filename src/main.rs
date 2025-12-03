@@ -8,18 +8,17 @@ use rand::prelude::*;
 use formats::ppm;
 use types::vec::Vec3;
 use types::ray::Ray;
+use types::scene::Scene;
 use traits::hittable::HitRecord;
 use traits::hittable::Hittable;
 
-fn hit<'a>(ray: &Ray, scene: &'a Vec<Box<dyn Hittable>>) -> Option<HitRecord<'a>> {
+fn hit<'a>(ray: &Ray, scene: &'a Scene) -> Option<HitRecord<'a>> {
     let mut closest_so_far = f32::MAX;
     let mut hit_record: Option<HitRecord<'a>> = None;
 
-    for object in scene {
-        if let Some(record) = object.hit(ray, 0.0, closest_so_far) {
-            closest_so_far = record.t;
-            hit_record = Some(record);
-        }
+    if let Some(record) = scene.hit(ray, 0.0, closest_so_far) {
+        closest_so_far = record.t;
+        hit_record = Some(record);
     }
 
     hit_record
@@ -42,17 +41,17 @@ fn main() {
     let camera = types::camera::Camera::new();
 
     // scene setup
-    let mut scene = Vec::<Box<dyn Hittable>>::new();
+    let mut scene = types::scene::Scene::new();
     let sphere = types::sphere::Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5, None);
-    let left_sphere = types::sphere::Sphere::new(&Vec3::new(-1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&Vec3::new(0.8, 0.6, 0.2), 0.3))));
-    let right_sphere = types::sphere::Sphere::new(&Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&Vec3::new(0.1, 0.2, 0.5), 1.0))));
-    let world = types::sphere::Sphere::new(&Vec3::new(0.0, -100.5, -1.0), 100.0, None);
+    let left_sphere = types::sphere::Sphere::new(&Vec3::new(-1.0, 0.0, -1.0), -0.45, Some(Box::new(materials::dielectric::Dielectric::new(1.5))));
+    let right_sphere = types::sphere::Sphere::new(&Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&Vec3::new(0.1, 0.2, 0.5), 0.0))));
+    let world = types::sphere::Sphere::new(&Vec3::new(0.0, -100.5, -1.0), 100.0, Some(Box::new(materials::diffuse::Diffuse::new(&Vec3::new(0.8, 0.8, 0.0)))));
     let skybox = types::skybox::Skybox::new(&blue, &white);
-    scene.push(Box::new(sphere));
-    scene.push(Box::new(left_sphere));
-    scene.push(Box::new(right_sphere));
-    scene.push(Box::new(world));
-    scene.push(Box::new(skybox));
+    scene.add_object(Box::new(sphere));
+    scene.add_object(Box::new(left_sphere));
+    scene.add_object(Box::new(right_sphere));
+    scene.add_object(Box::new(world));
+    scene.add_object(Box::new(skybox));
 
     // fill with data
     for y in 0..ppm_image.height {
