@@ -1,3 +1,8 @@
+//! A ray tracing library in Rust.
+//!
+//! Provides core components for ray tracing, including vectors, rays, cameras, scenes,
+//! primitives, materials, and rendering functionality.
+
 pub mod core;
 pub mod materials;
 pub mod primitives;
@@ -8,6 +13,18 @@ use rand::Rng;
 use crate::core::{camera, scene, vec};
 use crate::traits::renderable::Renderable;
 
+/// Renders the given scene to an RGB buffer using stochastic sampling.
+///
+/// # Arguments
+/// * `rng` - Random number generator used for jittered sampling.
+/// * `width`/`height` - Output dimensions in pixels.
+/// * `camera` - Camera used to generate view rays.
+/// * `scene` - Collection of renderable objects to trace against.
+/// * `ns` - Optional number of samples per pixel (defaults to 50).
+/// * `max_depth` - Optional recursion limit for ray bounces (defaults to 8).
+///
+/// # Returns
+/// A flat RGB buffer in row-major order with gamma correction applied.
 pub fn raytrace(
     rng: &mut rand::rngs::ThreadRng,
     width: u32,

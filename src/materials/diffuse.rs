@@ -1,17 +1,21 @@
+//! Lambertian diffuse material that scatters light uniformly.
 use crate::core::{ray, scene, vec};
 use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, sampleable};
 
+/// Diffuse surface with a constant albedo.
 pub struct Diffuse {
     pub albedo: vec::Vec3,
 }
 
 impl Diffuse {
+    /// Creates a new diffuse material with the given albedo.
     pub fn new(albedo: &vec::Vec3) -> Self {
         Diffuse { albedo: *albedo }
     }
 }
 
+/// Samples a diffuse bounce using cosine-weighted hemisphere sampling.
 fn diffuse_sample(
     diffuse: &Diffuse,
     rng: &mut rand::rngs::ThreadRng,

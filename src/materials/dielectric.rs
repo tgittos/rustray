@@ -1,3 +1,4 @@
+//! Transparent material that refracts and reflects based on a refractive index.
 use rand::Rng;
 
 use crate::core::{ray, scene, vec};
@@ -5,16 +6,19 @@ use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable::Sampleable;
 
+/// Glass-like dielectric material with a configurable refractive index.
 pub struct Dielectric {
     pub refractive_index: f32,
 }
 
 impl Dielectric {
+    /// Builds a new dielectric material (e.g., 1.5 for glass).
     pub fn new(refractive_index: f32) -> Self {
         Dielectric { refractive_index }
     }
 }
 
+/// Samples a ray through reflection or refraction using Schlick's approximation.
 fn dielectric_sample(
     dielectric: &Dielectric,
     rng: &mut rand::rngs::ThreadRng,

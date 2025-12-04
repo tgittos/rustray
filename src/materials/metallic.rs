@@ -1,14 +1,17 @@
+//! Reflective metallic material with optional roughness for blurred reflections.
 use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable;
 
+/// Mirror-like surface with an albedo tint and surface roughness.
 pub struct Metallic {
     pub albedo: vec::Vec3,
     pub roughness: f32,
 }
 
 impl Metallic {
+    /// Creates a metallic material; roughness is clamped to `[0, 1]`.
     pub fn new(albedo: &vec::Vec3, roughness: f32) -> Self {
         Metallic {
             albedo: *albedo,
@@ -17,6 +20,7 @@ impl Metallic {
     }
 }
 
+/// Samples a specular reflection with optional fuzziness.
 fn metallic_sample(
     metallic: &Metallic,
     rng: &mut rand::rngs::ThreadRng,

@@ -1,18 +1,29 @@
+//! Pinhole camera with configurable lens blur and field of view.
 use crate::core::ray;
 use crate::core::vec;
 
+/// Parameters used to build a [`Camera`].
 pub struct CameraConfig {
+    /// Camera position.
     pub origin: vec::Vec3,
+    /// Point to aim the camera at.
     pub look_at: vec::Vec3,
+    /// Up vector used to orient the camera.
     pub up: vec::Vec3,
+    /// Image aspect ratio (width / height).
     pub aspect_ratio: f32,
+    /// Height of the viewport in world space.
     pub viewport_height: f32,
+    /// Distance from camera origin to viewport plane.
     pub focal_length: f32,
+    /// Lens aperture size controlling depth of field blur.
     pub aperture: f32,
+    /// Vertical field of view in degrees.
     pub vertical_fov: f32,
 }
 
 #[derive(Debug)]
+/// Ray generator that maps screen coordinates to rays in world space.
 pub struct Camera {
     pub origin: vec::Vec3,
     pub lower_left_corner: vec::Vec3,
@@ -25,6 +36,7 @@ pub struct Camera {
 }
 
 impl Camera {
+    /// Creates a camera with sensible defaults (16:9, 90° FOV).
     pub fn new() -> Self {
         Camera::with_config(CameraConfig {
             origin: vec::Vec3::new(0.0, 0.0, 0.0),
@@ -38,6 +50,7 @@ impl Camera {
         })
     }
 
+    /// Constructs a camera from a full configuration.
     pub fn with_config(config: CameraConfig) -> Self {
         let theta = config.vertical_fov.to_radians();
         let half_height = (theta / 2.0).tan();
@@ -68,6 +81,7 @@ impl Camera {
         camera
     }
 
+    /// Re-aims the camera at a new target while preserving viewport size.
     pub fn look_at(&mut self, val: &vec::Vec3) {
         let w = (self.origin - *val).normalize();
         let u = self.up.cross(&w).normalize();
@@ -82,6 +96,7 @@ impl Camera {
             self.origin - (self.horizontal / 2.0) - (self.vertical / 2.0) - w * self.focal_length;
     }
 
+    /// Generates a ray through normalized viewport coordinates (`u`, `v`).
     pub fn get_ray(&self, u: f32, v: f32) -> ray::Ray {
         let lens_radius = self.aperture / 2.0;
         let rd = lens_radius * vec::random_in_unit_disk(&mut rand::rng());

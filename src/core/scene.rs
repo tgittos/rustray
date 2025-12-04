@@ -1,23 +1,28 @@
+//! Scene container that stores renderable objects and routes ray intersections.
 use crate::core::{ray, vec};
 use crate::traits::hittable;
 use crate::traits::renderable;
 
+/// Collection of renderable objects making up the world.
 pub struct Scene {
     pub objects: Vec<Box<dyn renderable::Renderable>>,
 }
 
 impl Scene {
+    /// Creates an empty scene.
     pub fn new() -> Self {
         Scene {
             objects: Vec::new(),
         }
     }
 
+    /// Adds a renderable object to the scene.
     pub fn add_object(&mut self, object: Box<dyn renderable::Renderable>) {
         self.objects.push(object);
     }
 }
 
+/// Finds the closest intersection among scene objects.
 fn scene_hit<'a>(
     ray: &ray::Ray,
     objects: &'a Vec<Box<dyn renderable::Renderable + 'static>>,
@@ -37,6 +42,7 @@ fn scene_hit<'a>(
     hit_record
 }
 
+/// Delegates sampling to the material bound to the hit object.
 fn scene_sample(
     rng: &mut rand::rngs::ThreadRng,
     hit_record: &hittable::HitRecord,

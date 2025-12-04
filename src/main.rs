@@ -1,3 +1,4 @@
+//! Binary entry point that renders the demo scene to `output.ppm`.
 mod formats;
 
 use rustray::core::{camera, scene, vec};

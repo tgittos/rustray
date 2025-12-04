@@ -1,15 +1,18 @@
+//! Procedural sky gradient that acts as both geometry and material.
 use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::renderable;
 use crate::traits::sampleable;
 
 #[derive(Clone, Copy)]
+/// Background gradient defined by top and bottom colors.
 pub struct Skybox {
     pub top_color: vec::Vec3,
     pub bottom_color: vec::Vec3,
 }
 
 impl Skybox {
+    /// Builds a skybox gradient.
     pub fn new(top_color: &vec::Vec3, bottom_color: &vec::Vec3) -> Self {
         Skybox {
             top_color: *top_color,
@@ -18,6 +21,7 @@ impl Skybox {
     }
 }
 
+/// Returns a dummy hit at infinity so the skybox can participate in rendering.
 fn skybox_hit(ray: &ray::Ray, _t_min: f32, t_max: f32) -> Option<hittable::Hit> {
     // Only act as a background; if we've already hit something closer, skip.
     if t_max < f32::MAX {
@@ -35,6 +39,7 @@ fn skybox_hit(ray: &ray::Ray, _t_min: f32, t_max: f32) -> Option<hittable::Hit> 
     })
 }
 
+/// Samples a vertical gradient based on the hit point's direction.
 fn skybox_sample(
     _rng: &mut rand::rngs::ThreadRng,
     top_color: &vec::Vec3,

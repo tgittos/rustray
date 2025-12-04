@@ -1,7 +1,9 @@
+//! Minimal PPM writer used to emit rendered images.
 use std::fs::File;
 use std::io::Result;
 use std::io::prelude::*;
 
+/// In-memory PPM image buffer.
 pub struct PpmImage {
     pub width: usize,
     pub height: usize,
@@ -9,6 +11,7 @@ pub struct PpmImage {
     pub data: Vec<u8>,
 }
 
+/// Creates a zero-initialized PPM buffer of the requested size.
 pub fn new_ppm_image(width: usize, height: usize, max_color_value: Option<u8>) -> PpmImage {
     let data = vec![0; width * height * 3]; // Initialize with black pixels
     PpmImage {
@@ -19,6 +22,7 @@ pub fn new_ppm_image(width: usize, height: usize, max_color_value: Option<u8>) -
     }
 }
 
+/// Writes a PPM file to disk from the provided buffer.
 pub fn write_ppm(file_path: &str, ppm_image: PpmImage) -> Result<()> {
     let mut file = File::create(file_path)?;
     let header = format!(
