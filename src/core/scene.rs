@@ -8,7 +8,9 @@ pub struct Scene {
 
 impl Scene {
     pub fn new() -> Self {
-        Scene { objects: Vec::new() }
+        Scene {
+            objects: Vec::new(),
+        }
     }
 
     pub fn add_object(&mut self, object: Box<dyn renderable::Renderable>) {
@@ -16,7 +18,12 @@ impl Scene {
     }
 }
 
-fn scene_hit<'a>(ray: &ray::Ray, objects: &'a Vec<Box<dyn renderable::Renderable + 'static>>, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'a>> {
+fn scene_hit<'a>(
+    ray: &ray::Ray,
+    objects: &'a Vec<Box<dyn renderable::Renderable + 'static>>,
+    t_min: f32,
+    t_max: f32,
+) -> Option<hittable::HitRecord<'a>> {
     let mut closest_so_far = t_max;
     let mut hit_record: Option<hittable::HitRecord> = None;
 
@@ -40,12 +47,7 @@ fn scene_sample(
 }
 
 impl renderable::Renderable for Scene {
-    fn hit(
-        &self,
-        ray: &ray::Ray,
-        t_min: f32,
-        t_max: f32,
-    ) -> Option<hittable::HitRecord<'_>> {
+    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         scene_hit(ray, &self.objects, t_min, t_max)
     }
 
@@ -61,12 +63,7 @@ impl renderable::Renderable for Scene {
 }
 
 impl renderable::Renderable for &Scene {
-    fn hit(
-        &self,
-        ray: &ray::Ray,
-        t_min: f32,
-        t_max: f32,
-    ) -> Option<hittable::HitRecord<'_>> {
+    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         scene_hit(ray, &self.objects, t_min, t_max)
     }
 

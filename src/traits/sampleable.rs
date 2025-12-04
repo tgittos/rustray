@@ -1,4 +1,4 @@
-use crate::core::{vec, scene};
+use crate::core::{scene, vec};
 use crate::traits::hittable;
 
 pub trait Sampleable {

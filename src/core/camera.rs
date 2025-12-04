@@ -1,5 +1,5 @@
-use crate::core::vec;
 use crate::core::ray;
+use crate::core::vec;
 
 pub struct CameraConfig {
     pub origin: vec::Vec3,
@@ -49,7 +49,10 @@ impl Camera {
 
         let horizontal = u * half_width * 2.0;
         let vertical = v * half_height * 2.0;
-        let lower_left_corner = config.origin - half_width * config.focal_length * u - half_height * config.focal_length * v - w * config.focal_length;
+        let lower_left_corner = config.origin
+            - half_width * config.focal_length * u
+            - half_height * config.focal_length * v
+            - w * config.focal_length;
 
         let camera = Camera {
             origin: config.origin,
@@ -75,16 +78,20 @@ impl Camera {
 
         self.horizontal = u * horizontal_len;
         self.vertical = v * vertical_len;
-        self.lower_left_corner = self.origin - (self.horizontal / 2.0) - (self.vertical / 2.0) - w * self.focal_length;
+        self.lower_left_corner =
+            self.origin - (self.horizontal / 2.0) - (self.vertical / 2.0) - w * self.focal_length;
     }
 
     pub fn get_ray(&self, u: f32, v: f32) -> ray::Ray {
         let lens_radius = self.aperture / 2.0;
         let rd = lens_radius * vec::random_in_unit_disk(&mut rand::rng());
-        let offset = self.up.cross(&((self.horizontal).normalize())) * rd.x + self.up.cross(&((self.vertical).normalize())) * rd.y;
+        let offset = self.up.cross(&((self.horizontal).normalize())) * rd.x
+            + self.up.cross(&((self.vertical).normalize())) * rd.y;
         ray::Ray {
             origin: self.origin + offset,
-            direction: self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset,
+            direction: self.lower_left_corner + u * self.horizontal + v * self.vertical
+                - self.origin
+                - offset,
         }
     }
 }

@@ -1,5 +1,5 @@
-use crate::core::vec;
 use crate::core::ray;
+use crate::core::vec;
 use crate::traits::renderable;
 
 #[derive(Clone, Copy)]

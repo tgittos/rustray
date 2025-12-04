@@ -1,4 +1,4 @@
-use crate::core::{vec, ray};
+use crate::core::{ray, vec};
 use crate::traits::hittable;
 
 pub struct Sphere {
@@ -27,13 +27,23 @@ impl hittable::Hittable for Sphere {
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(hittable::Hit { ray: ray.clone(), t: temp, point, normal });
+                return Some(hittable::Hit {
+                    ray: ray.clone(),
+                    t: temp,
+                    point,
+                    normal,
+                });
             }
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(hittable::Hit { ray: ray.clone(), t: temp, point, normal });
+                return Some(hittable::Hit {
+                    ray: ray.clone(),
+                    t: temp,
+                    point,
+                    normal,
+                });
             }
         }
         None

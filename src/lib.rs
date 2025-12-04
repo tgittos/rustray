@@ -1,11 +1,11 @@
 pub mod core;
-pub mod traits;
 pub mod materials;
 pub mod primitives;
+pub mod traits;
 
 use rand::Rng;
 
-use crate::core::{vec, camera, scene};
+use crate::core::{camera, scene, vec};
 use crate::traits::renderable::Renderable;
 
 pub fn raytrace(

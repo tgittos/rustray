@@ -102,7 +102,6 @@ impl ops::Mul<Vec3> for &Vec3 {
     }
 }
 
-
 impl ops::Mul<f32> for Vec3 {
     type Output = Vec3;
 

@@ -1,6 +1,6 @@
-use crate::core::{vec, ray, scene};
-use crate::traits::{hittable, sampleable};
+use crate::core::{ray, scene, vec};
 use crate::traits::renderable::Renderable;
+use crate::traits::{hittable, sampleable};
 
 pub struct Diffuse {
     pub albedo: vec::Vec3,
@@ -8,9 +8,7 @@ pub struct Diffuse {
 
 impl Diffuse {
     pub fn new(albedo: &vec::Vec3) -> Self {
-        Diffuse {
-            albedo: *albedo,
-        }
+        Diffuse { albedo: *albedo }
     }
 }
 
@@ -19,7 +17,7 @@ fn diffuse_sample(
     rng: &mut rand::rngs::ThreadRng,
     hit_record: &hittable::HitRecord,
     scene: &scene::Scene,
-    depth: u32
+    depth: u32,
 ) -> vec::Vec3 {
     if depth == 0 {
         return vec::Vec3::new(0.0, 0.0, 0.0);
@@ -31,7 +29,9 @@ fn diffuse_sample(
     // bounce ray and attenuate
     let new_ray = ray::Ray::new(&hit.point, &(target - hit.point));
     if let Some(new_hit_record) = scene.hit(&new_ray, 0.001, f32::MAX) {
-        let bounce = new_hit_record.renderable.sample(rng, &new_hit_record, scene, depth - 1);
+        let bounce = new_hit_record
+            .renderable
+            .sample(rng, &new_hit_record, scene, depth - 1);
         return diffuse.albedo * (0.5 * bounce);
     }
 
@@ -40,13 +40,25 @@ fn diffuse_sample(
 }
 
 impl sampleable::Sampleable for Diffuse {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
+    fn sample(
+        &self,
+        rng: &mut rand::rngs::ThreadRng,
+        hit_record: &hittable::HitRecord,
+        scene: &scene::Scene,
+        depth: u32,
+    ) -> vec::Vec3 {
         diffuse_sample(self, rng, hit_record, scene, depth)
     }
 }
 
 impl sampleable::Sampleable for &Diffuse {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
+    fn sample(
+        &self,
+        rng: &mut rand::rngs::ThreadRng,
+        hit_record: &hittable::HitRecord,
+        scene: &scene::Scene,
+        depth: u32,
+    ) -> vec::Vec3 {
         diffuse_sample(self, rng, hit_record, scene, depth)
     }
 }

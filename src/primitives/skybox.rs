@@ -1,7 +1,7 @@
-use crate::core::{vec, ray, scene};
+use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
-use crate::traits::sampleable;
 use crate::traits::renderable;
+use crate::traits::sampleable;
 
 #[derive(Clone, Copy)]
 pub struct Skybox {
@@ -17,7 +17,6 @@ impl Skybox {
         }
     }
 }
-
 
 fn skybox_hit(ray: &ray::Ray, _t_min: f32, t_max: f32) -> Option<hittable::Hit> {
     // Only act as a background; if we've already hit something closer, skip.
@@ -49,7 +48,6 @@ fn skybox_sample(
     bottom_color * (1.0 - t) + top_color * t
 }
 
-
 impl hittable::Hittable for Skybox {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         skybox_hit(ray, t_min, t_max)
@@ -64,7 +62,14 @@ impl sampleable::Sampleable for Skybox {
         scene: &scene::Scene,
         depth: u32,
     ) -> vec::Vec3 {
-        skybox_sample(rng, &self.top_color, &self.bottom_color, hit_record, scene, depth)
+        skybox_sample(
+            rng,
+            &self.top_color,
+            &self.bottom_color,
+            hit_record,
+            scene,
+            depth,
+        )
     }
 }
 
@@ -91,6 +96,13 @@ impl renderable::Renderable for Skybox {
         scene: &scene::Scene,
         depth: u32,
     ) -> vec::Vec3 {
-        skybox_sample(rng, &self.top_color, &self.bottom_color, hit_record, scene, depth)
+        skybox_sample(
+            rng,
+            &self.top_color,
+            &self.bottom_color,
+            hit_record,
+            scene,
+            depth,
+        )
     }
 }

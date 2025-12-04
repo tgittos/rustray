@@ -1,4 +1,4 @@
-use crate::core::{vec, ray, scene};
+use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::sampleable;
 

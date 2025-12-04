@@ -1,10 +1,10 @@
 mod formats;
 
-use rustray::core::{vec, camera, scene};
-use rustray::materials::{diffuse, metallic, dielectric};
-use rustray::primitives::{sphere, skybox};
-use rustray::traits::renderable;
+use rustray::core::{camera, scene, vec};
+use rustray::materials::{dielectric, diffuse, metallic};
+use rustray::primitives::{skybox, sphere};
 use rustray::raytrace;
+use rustray::traits::renderable;
 
 use formats::ppm;
 
@@ -18,7 +18,10 @@ fn main() {
     let ns = 50; // samples per pixel
     let max_depth: u32 = 8; // configurable bounce limit
 
-    println!("Rendering a {}x{} image with {} samples per pixel and max depth {}", nx, ny, ns, max_depth);
+    println!(
+        "Rendering a {}x{} image with {} samples per pixel and max depth {}",
+        nx, ny, ns, max_depth
+    );
 
     // scene setup
     let camera_config = camera::CameraConfig {
@@ -50,15 +53,19 @@ fn main() {
     );
 
     let world = renderable::create_renderable(
-        Box::new(sphere::Sphere::new(&vec::Vec3::new(0.0, -100.5, -1.0), 100.0)),
+        Box::new(sphere::Sphere::new(
+            &vec::Vec3::new(0.0, -100.5, -1.0),
+            100.0,
+        )),
         Box::new(diffuse::Diffuse::new(&vec::Vec3::new(0.8, 0.8, 0.0))),
     );
 
-    let skybox_primitive = skybox::Skybox::new(&vec::Vec3::new(0.5, 0.7, 1.0), &vec::Vec3::new(1.0, 1.0, 1.0));
-    let skybox = renderable::create_renderable(
-        Box::new(skybox_primitive),
-        Box::new(skybox_primitive),
+    let skybox_primitive = skybox::Skybox::new(
+        &vec::Vec3::new(0.5, 0.7, 1.0),
+        &vec::Vec3::new(1.0, 1.0, 1.0),
     );
+    let skybox =
+        renderable::create_renderable(Box::new(skybox_primitive), Box::new(skybox_primitive));
 
     scene.add_object(Box::new(center_sphere));
     scene.add_object(Box::new(left_sphere));
