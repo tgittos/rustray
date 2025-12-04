@@ -1,23 +1,19 @@
 pub mod core;
-pub mod types;
 pub mod traits;
 pub mod materials;
+pub mod primitives;
 
 use rand::Rng;
 
-use crate::core::vec;
-use crate::core::ray;
-use crate::types::camera::Camera;
-use crate::types::scene::Scene;
-use crate::traits::hittable::Hittable;
-use crate::traits::hittable::HitRecord;
+use crate::core::{vec, camera, scene};
+use crate::traits::renderable::Renderable;
 
 pub fn raytrace(
     rng: &mut rand::rngs::ThreadRng,
     width: u32,
     height: u32,
-    camera: &Camera,
-    scene: &Scene,
+    camera: &camera::Camera,
+    scene: &scene::Scene,
     ns: Option<u32>,
     max_depth: Option<u32>,
 ) -> Vec<u8> {
@@ -35,7 +31,7 @@ pub fn raytrace(
                 let r = camera.get_ray(u, v);
 
                 if let Some(hit) = scene.hit(&r, 0.001, f32::MAX) {
-                    col = col + hit.sampleable.sample(rng, &hit, &scene, max_depth);
+                    col = col + hit.renderable.sample(rng, &hit, &scene, max_depth);
                 }
             }
             col = col / ns as f32;

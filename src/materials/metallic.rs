@@ -1,10 +1,7 @@
-use crate::core::vec;
-use crate::core::ray;
-
-use crate::types::scene::Scene;
-use crate::traits::hittable::Hittable;
-use crate::traits::hittable::HitRecord;
-use crate::traits::sampleable::Sampleable;
+use crate::core::{vec, ray, scene};
+use crate::traits::hittable;
+use crate::traits::sampleable;
+use crate::traits::renderable::Renderable;
 
 pub struct Metallic {
     pub albedo: vec::Vec3,
@@ -17,18 +14,18 @@ impl Metallic {
     }
 }
 
-fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Scene, depth: u32) -> vec::Vec3 {
+fn metallic_sample(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
     if depth == 0 {
         return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
-    let reflected = vec::reflect(&vec::unit_vector(&hit_record.ray.direction), &hit_record.normal);
-    let scattered = ray::Ray::new(&hit_record.point, &(reflected + vec::random_in_unit_sphere(rng) * metallic.roughness));
-    let mut closest_so_far = f32::MAX;
-    let mut new_hit_record: Option<HitRecord<'a>> = None;
+    let hit = hit_record.hit;
+    let reflected = vec::reflect(&vec::unit_vector(&hit.ray.direction), &hit.normal);
+    let scattered = ray::Ray::new(&hit.point, &(reflected + vec::random_in_unit_sphere(rng) * metallic.roughness));
 
-    if let Some(record) = scene.hit(&scattered, 0.001, closest_so_far) {
-        closest_so_far = record.t;
+    let mut new_hit_record: Option<hittable::HitRecord> = None;
+
+    if let Some(record) = scene.hit(&scattered, 0.001, f32::MAX) {
         new_hit_record = Some(record);
     }
 
@@ -37,18 +34,18 @@ fn metallic_sample<'a>(metallic: &Metallic, rng: &mut rand::rngs::ThreadRng, hit
     }
 
     let new_hit_record = new_hit_record.unwrap();
-    let bounce = new_hit_record.sampleable.sample(rng, &new_hit_record, scene, depth - 1);
+    let bounce = new_hit_record.renderable.sample(rng, &new_hit_record, scene, depth - 1);
     return metallic.albedo * bounce;
 }
 
-impl Sampleable for Metallic {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
+impl sampleable::Sampleable for Metallic {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
         metallic_sample(self, rng, hit_record, scene, depth)
     }
 }
 
-impl Sampleable for &Metallic {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
+impl sampleable::Sampleable for &Metallic {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
         metallic_sample(self, rng, hit_record, scene, depth)
     }
 }

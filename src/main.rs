@@ -1,9 +1,10 @@
 mod formats;
 
-use rustray::core;
+use rustray::core::{vec, camera, scene};
+use rustray::materials::{diffuse, metallic, dielectric};
+use rustray::primitives::{sphere, skybox};
+use rustray::traits::renderable;
 use rustray::raytrace;
-use rustray::types;
-use rustray::materials;
 
 use formats::ppm;
 
@@ -20,24 +21,46 @@ fn main() {
     println!("Rendering a {}x{} image with {} samples per pixel and max depth {}", nx, ny, ns, max_depth);
 
     // scene setup
-    let camera_config = types::camera::CameraConfig {
-        origin: core::vec::Vec3::new(0.0, 0.0, 0.0),
-        look_at: core::vec::Vec3::new(0.0, 0.0, -1.0),
-        up: core::vec::Vec3::new(0.0, 1.0, 0.0),
+    let camera_config = camera::CameraConfig {
+        origin: vec::Vec3::new(0.0, 0.0, 0.0),
+        look_at: vec::Vec3::new(0.0, 0.0, -1.0),
+        up: vec::Vec3::new(0.0, 1.0, 0.0),
         aspect_ratio: nx as f32 / ny as f32,
         viewport_height: 2.0,
         focal_length: 1.0,
         aperture: 0.1,
         vertical_fov: 75.0,
     };
-    let camera = types::camera::Camera::with_config(camera_config);
-    let mut scene = types::scene::Scene::new();
-    let sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(0.0, 0.0, -1.0), 0.5, None);
-    let left_sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(-1.0, 0.0, -1.0), -0.5, Some(Box::new(materials::dielectric::Dielectric::new(1.5))));
-    let right_sphere = types::sphere::Sphere::new(&core::vec::Vec3::new(1.0, 0.0, -1.0), 0.5, Some(Box::new(materials::metallic::Metallic::new(&core::vec::Vec3::new(0.1, 0.2, 0.5), 0.0))));
-    let world = types::sphere::Sphere::new(&core::vec::Vec3::new(0.0, -100.5, -1.0), 100.0, Some(Box::new(materials::diffuse::Diffuse::new(&core::vec::Vec3::new(0.8, 0.8, 0.0)))));
-    let skybox = types::skybox::Skybox::new(&core::vec::Vec3::new(0.5, 0.7, 1.0), &core::vec::Vec3::new(1.0, 1.0, 1.0));
-    scene.add_object(Box::new(sphere));
+    let camera = camera::Camera::with_config(camera_config);
+    let mut scene = scene::Scene::new();
+
+    let center_sphere = renderable::create_renderable(
+        Box::new(sphere::Sphere::new(&vec::Vec3::new(0.0, 0.0, -1.0), 0.5)),
+        Box::new(diffuse::Diffuse::new(&vec::Vec3::new(0.7, 0.3, 0.3))),
+    );
+
+    let left_sphere = renderable::create_renderable(
+        Box::new(sphere::Sphere::new(&vec::Vec3::new(-1.0, 0.0, -1.0), -0.5)),
+        Box::new(dielectric::Dielectric::new(1.5)),
+    );
+
+    let right_sphere = renderable::create_renderable(
+        Box::new(sphere::Sphere::new(&vec::Vec3::new(1.0, 0.0, -1.0), 0.5)),
+        Box::new(metallic::Metallic::new(&vec::Vec3::new(0.8, 0.6, 0.2), 0.0)),
+    );
+
+    let world = renderable::create_renderable(
+        Box::new(sphere::Sphere::new(&vec::Vec3::new(0.0, -100.5, -1.0), 100.0)),
+        Box::new(diffuse::Diffuse::new(&vec::Vec3::new(0.8, 0.8, 0.0))),
+    );
+
+    let skybox_primitive = skybox::Skybox::new(&vec::Vec3::new(0.5, 0.7, 1.0), &vec::Vec3::new(1.0, 1.0, 1.0));
+    let skybox = renderable::create_renderable(
+        Box::new(skybox_primitive),
+        Box::new(skybox_primitive),
+    );
+
+    scene.add_object(Box::new(center_sphere));
     scene.add_object(Box::new(left_sphere));
     scene.add_object(Box::new(right_sphere));
     scene.add_object(Box::new(world));

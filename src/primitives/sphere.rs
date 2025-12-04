@@ -1,7 +1,5 @@
-use crate::core::vec;
-use crate::core::ray;
-use crate::traits::hittable::Hittable;
-use crate::traits::hittable::HitRecord;
+use crate::core::{vec, ray};
+use crate::traits::hittable;
 
 pub struct Sphere {
     pub center: vec::Vec3,
@@ -17,8 +15,8 @@ impl Sphere {
     }
 }
 
-impl Hittable for Sphere {
-    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'_>> {
+impl hittable::Hittable for Sphere {
+    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         let oc = ray.origin - self.center;
         let a = ray.direction.dot(&ray.direction);
         let b = oc.dot(&ray.direction);
@@ -29,13 +27,13 @@ impl Hittable for Sphere {
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(HitRecord { ray: ray.clone(), t: temp, point, normal, sampleable: self });
+                return Some(hittable::Hit { ray: ray.clone(), t: temp, point, normal });
             }
             let temp = (-b + discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let point = ray.point_at(temp);
                 let normal = (point - self.center) / self.radius;
-                return Some(HitRecord { ray: ray.clone(), t: temp, point, normal, sampleable: self });
+                return Some(hittable::Hit { ray: ray.clone(), t: temp, point, normal });
             }
         }
         None

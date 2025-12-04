@@ -1,11 +1,9 @@
 use rand::Rng;
 
-use crate::core::vec;
-use crate::core::ray;
-use crate::types::scene::Scene;
-use crate::traits::hittable::Hittable;
-use crate::traits::hittable::HitRecord;
+use crate::core::{vec, ray, scene};
+use crate::traits::hittable;
 use crate::traits::sampleable::Sampleable;
+use crate::traits::renderable::Renderable;
 
 pub struct Dielectric {
     pub refractive_index: f32,
@@ -17,26 +15,33 @@ impl Dielectric {
     }
 }
 
-fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &'a Scene, depth: u32) -> vec::Vec3 {
-    let reflected = vec::reflect(&vec::unit_vector(&hit_record.ray.direction), &hit_record.normal);
+fn dielectric_sample(
+    dielectric: &Dielectric,
+    rng: &mut rand::rngs::ThreadRng,
+    hit_record: &hittable::HitRecord,
+    scene: &scene::Scene,
+    depth: u32
+) -> vec::Vec3 {
+    let hit = hit_record.hit;
+    let reflected = vec::reflect(&vec::unit_vector(&hit.ray.direction), &hit.normal);
     let outward_normal;
     let ni_over_nt;
     let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);
     let cosine;
 
-    if hit_record.ray.direction.dot(&hit_record.normal) > 0.0 {
+    if hit.ray.direction.dot(&hit.normal) > 0.0 {
         // Ray is inside the material
-        outward_normal = -hit_record.normal;
+        outward_normal = -hit.normal;
         ni_over_nt = dielectric.refractive_index;
-        cosine = dielectric.refractive_index * hit_record.ray.direction.dot(&hit_record.normal) / hit_record.ray.direction.length();
+        cosine = dielectric.refractive_index * hit.ray.direction.dot(&hit.normal) / hit.ray.direction.length();
     } else {
         // Ray is outside the material
-        outward_normal = hit_record.normal;
+        outward_normal = hit.normal;
         ni_over_nt = 1.0 / dielectric.refractive_index;
-        cosine = -hit_record.ray.direction.dot(&hit_record.normal) / hit_record.ray.direction.length();
+        cosine = -hit.ray.direction.dot(&hit.normal) / hit.ray.direction.length();
     }
 
-    let refracted = vec::refract(&vec::unit_vector(&hit_record.ray.direction), &outward_normal, ni_over_nt);
+    let refracted = vec::refract(&vec::unit_vector(&hit.ray.direction), &outward_normal, ni_over_nt);
     let scatter_direction = match refracted {
         Some(refracted) => {
             let r0 = ((1.0 - dielectric.refractive_index) / (1.0 + dielectric.refractive_index)).powi(2);
@@ -57,9 +62,8 @@ fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRn
         return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
-    let scene_hit = scene.hit(&ray::Ray::new(&hit_record.point, &scatter_direction), 0.001, f32::MAX);
-    if let Some(new_hit_record) = scene_hit {
-        let bounce = new_hit_record.sampleable.sample(rng, &new_hit_record, scene, depth - 1);
+    if let Some(new_hit_record) = scene.hit(&ray::Ray::new(&hit.point, &scatter_direction), 0.001, f32::MAX) {
+        let bounce = new_hit_record.renderable.sample(rng, &new_hit_record, scene, depth - 1);
         attenuation * bounce
     } else {
         vec::Vec3::new(0.0, 0.0, 0.0)
@@ -67,13 +71,13 @@ fn dielectric_sample<'a>(dielectric: &Dielectric, rng: &mut rand::rngs::ThreadRn
 }
 
 impl Sampleable for Dielectric {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
         dielectric_sample(self, rng, hit_record, scene, depth)
     }
 }
 
 impl Sampleable for &Dielectric {
-    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &HitRecord<'_>, scene: &Scene, depth: u32) -> vec::Vec3 {
+    fn sample(&self, rng: &mut rand::rngs::ThreadRng, hit_record: &hittable::HitRecord, scene: &scene::Scene, depth: u32) -> vec::Vec3 {
         dielectric_sample(self, rng, hit_record, scene, depth)
     }
 }
