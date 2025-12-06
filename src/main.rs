@@ -16,7 +16,9 @@ fn main() {
     // let ny = 600;
     let nx = 200;
     let ny = 100;
-    let ns = 50; // samples per pixel
+    //let ns = 50; // samples per pixel
+    let ns = 500; // samples per pixel
+    // let ns = 1000; // samples per pixel
     let max_depth: u32 = 8; // configurable bounce limit
 
     println!(
