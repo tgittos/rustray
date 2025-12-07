@@ -1,0 +1,56 @@
+[render]
+width = 400
+aspect_ratio = 1.7777777910232544
+samples = 100
+depth = 50
+
+[camera]
+origin = [
+    0.0,
+    0.0,
+    12.0,
+]
+look_at = [
+    0.0,
+    0.0,
+    0.0,
+]
+up = [
+    0.0,
+    1.0,
+    0.0,
+]
+aspect_ratio = 1.7777777910232544
+viewport_height = 2.0
+focal_length = 10.0
+aperture = 0.0
+vertical_fov = 20.0
+
+[[objects]]
+type = "skybox"
+top_color = [
+    0.5,
+    0.699999988079071,
+    1.0,
+]
+bottom_color = [
+    1.0,
+    1.0,
+    1.0,
+]
+
+[[objects]]
+type = "sphere"
+center = [
+    0.0,
+    0.0,
+    0.0,
+]
+radius = 2.0
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "uv"
+path = "assets/earth.jpg"

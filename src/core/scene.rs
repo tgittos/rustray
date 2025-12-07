@@ -5,7 +5,7 @@ use std::{fs, path::Path, time};
 use crate::core::{bvh, camera, ray, vec};
 use crate::materials::{dielectric, lambertian, metallic};
 use crate::primitives::{skybox, sphere};
-use crate::textures::{checker, color};
+use crate::textures::{checker, color, uv};
 use crate::traits::hittable;
 use crate::traits::renderable;
 use crate::traits::renderable::Renderable;
@@ -59,6 +59,9 @@ pub enum Texture {
         color2: vec::Vec3,
         scale: f32,
     },
+    Uv {
+        path: String,
+    },
 }
 
 impl Texture {
@@ -74,6 +77,7 @@ impl Texture {
                 color::ColorTexture::new(*color2),
                 *scale,
             )),
+            Texture::Uv { path } => Box::new(uv::UvTexture::new(path)),
         }
     }
 }
