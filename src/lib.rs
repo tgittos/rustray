@@ -5,6 +5,7 @@
 pub mod core;
 pub mod materials;
 pub mod primitives;
+pub mod textures;
 pub mod traits;
 pub mod utils;
 
@@ -101,13 +102,15 @@ pub fn raytrace(
     vec![
         stats::SCENE_HIT,
         stats::SCENE_SAMPLE,
-        stats::DIFFUSE_HIT,
-        stats::DIFFUSE_SAMPLE,
+        stats::LAMBERTIAN_HIT,
+        stats::LAMBERTIAN_SAMPLE,
         stats::METALLIC_HIT,
         stats::METALLIC_SAMPLE,
         stats::DIELECTRIC_HIT,
         stats::DIELECTRIC_SAMPLE,
-    ].iter().for_each(|stat_name| {
+    ]
+    .iter()
+    .for_each(|stat_name| {
         println!(
             "Stat: {}\n  P50: {:?}\n  P90: {:?}\n  P99: {:?}\n",
             stat_name,
@@ -116,10 +119,19 @@ pub fn raytrace(
             stats.p99_by_name(stat_name)
         );
     });
-    println!("Total Hit Time: {}", format_duration(stats.total_hit_time()));
-    println!("Total Sample Time: {}", format_duration(stats.total_sample_time()));
+    println!(
+        "Total Hit Time: {}",
+        format_duration(stats.total_hit_time())
+    );
+    println!(
+        "Total Sample Time: {}",
+        format_duration(stats.total_sample_time())
+    );
     println!("--------------------------");
-    println!("Overall Total Time: {}", format_duration(stats.total_time()));
+    println!(
+        "Overall Total Time: {}",
+        format_duration(stats.total_time())
+    );
     println!("--------------------------");
 
     image_data

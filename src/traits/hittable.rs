@@ -13,6 +13,10 @@ pub struct Hit {
     pub point: vec::Vec3,
     /// Surface normal pointing outward from the hit.
     pub normal: vec::Vec3,
+    /// Texture coordinates at the hit point.
+    pub u: f32,
+    /// Texture coordinates at the hit point.
+    pub v: f32,
 }
 
 /// Trait for objects that can be intersected by rays.

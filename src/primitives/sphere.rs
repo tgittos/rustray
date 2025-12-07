@@ -62,6 +62,8 @@ impl hittable::Hittable for Sphere {
                         t: temp,
                         point,
                         normal,
+                        u: 0.0,
+                        v: 0.0,
                     });
                 }
             }

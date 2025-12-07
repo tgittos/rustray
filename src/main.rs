@@ -6,9 +6,10 @@ use rand::Rng;
 use std::path::Path;
 
 use rustray::core::{camera, scene, vec};
-use rustray::materials::{dielectric, diffuse, metallic};
+use rustray::materials::{dielectric, lambertian, metallic};
 use rustray::primitives::{skybox, sphere};
 use rustray::raytrace;
+use rustray::textures::{checker, color};
 use rustray::traits::{renderable, sampleable};
 
 fn main() {
@@ -57,7 +58,8 @@ fn main() {
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo = vec::random(&mut rng) * vec::random(&mut rng);
-                    sphere_material = Box::new(diffuse::Diffuse::new(&albedo));
+                    let texture = color::ColorTexture::new(albedo);
+                    sphere_material = Box::new(lambertian::Diffuse::new(Box::new(texture)));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = vec::random(&mut rng) * vec::random(&mut rng);
@@ -86,7 +88,9 @@ fn main() {
 
     let left_sphere = renderable::create_renderable(
         Box::new(sphere::Sphere::new(&vec::Vec3::new(-4.0, 1.0, 0.0), 1.0)),
-        Box::new(diffuse::Diffuse::new(&vec::Vec3::new(0.4, 0.2, 0.1))),
+        Box::new(lambertian::Diffuse::new(Box::new(
+            color::ColorTexture::new(vec::Vec3::new(0.4, 0.2, 0.1)),
+        ))),
     );
 
     let center_sphere = renderable::create_renderable(
@@ -104,7 +108,13 @@ fn main() {
             &vec::Vec3::new(0.0, -1000.0, 0.0),
             1000.0,
         )),
-        Box::new(diffuse::Diffuse::new(&vec::Vec3::new(0.5, 0.5, 0.5))),
+        Box::new(lambertian::Diffuse::new(Box::new(
+            checker::CheckerTexture::new(
+                vec::Vec3::new(0.2, 0.3, 0.1),
+                vec::Vec3::new(0.9, 0.9, 0.9),
+                10.0,
+            ),
+        ))),
     );
 
     let skybox_primitive = skybox::Skybox::new(

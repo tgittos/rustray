@@ -190,8 +190,8 @@ impl Stats {
 
 pub static DIELECTRIC_HIT: &str = "dielectric_hit";
 pub static DIELECTRIC_SAMPLE: &str = "dielectric_sample";
-pub static DIFFUSE_HIT: &str = "diffuse_hit";
-pub static DIFFUSE_SAMPLE: &str = "diffuse_sample";
+pub static LAMBERTIAN_HIT: &str = "lambertian_hit";
+pub static LAMBERTIAN_SAMPLE: &str = "lambertian_sample";
 pub static METALLIC_HIT: &str = "metallic_hit";
 pub static METALLIC_SAMPLE: &str = "metallic_sample";
 pub static SCENE_HIT: &str = "scene_hit";

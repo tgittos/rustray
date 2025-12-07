@@ -40,6 +40,20 @@ impl BBox {
         }
     }
 
+    pub fn longest_axis(&self) -> usize {
+        let x_length = self.x.length();
+        let y_length = self.y.length();
+        let z_length = self.z.length();
+
+        if x_length > y_length && x_length > z_length {
+            0
+        } else if y_length > z_length {
+            1
+        } else {
+            2
+        }
+    }
+
     pub fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> bool {
         let inv_dir = vec::Vec3::new(
             1.0 / ray.direction.x,

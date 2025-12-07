@@ -1,6 +1,4 @@
 //! Bounding Volume Hierarchy for accelerating renderable hit tests.
-use rand::Rng;
-
 use crate::core::bbox;
 use crate::traits::{hittable, renderable};
 
@@ -36,7 +34,13 @@ impl BvhNode {
             };
         }
 
-        let axis = rng.random_range(0..3);
+        let bbox = renderables
+            .iter()
+            .map(|obj| obj.bounding_box())
+            .reduce(|acc, bbox| acc.union(&bbox))
+            .unwrap();
+
+        let axis = bbox.longest_axis();
         renderables.sort_by(|a, b| BvhNode::box_compare(a, b, axis));
         let mid = renderables.len() / 2;
         let right_renderables = renderables.split_off(mid);

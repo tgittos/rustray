@@ -34,6 +34,8 @@ fn skybox_hit(ray: &ray::Ray, _t_min: f32, t_max: f32) -> Option<hittable::Hit> 
         t,
         point,
         normal,
+        u: 0.0,
+        v: 0.0,
     })
 }
 

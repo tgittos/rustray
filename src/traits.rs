@@ -12,7 +12,12 @@
 //! # Renderable
 //! The [renderable::Renderable] trait combines `Hittable` and `Sampleable` traits, allowing
 //! objects to be both intersected by rays and provide color contributions.
+//!
+//! # Texturable
+//! The [texturable::Texturable] trait defines objects that can provide texture color values
+//! based on texture coordinates and points in space.
 
 pub mod hittable;
 pub mod renderable;
 pub mod sampleable;
+pub mod texturable;

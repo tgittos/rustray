@@ -53,7 +53,11 @@ fn dielectric_sample(
     let scatter_direction = if cannot_refract || rng.random::<f32>() < reflectance {
         vec::reflect(&unit_direction, &normal)
     } else {
-        vec::refract(&unit_direction, &normal, refraction_ratio).unwrap()
+        let refracted = vec::refract(&unit_direction, &normal, refraction_ratio);
+        match refracted {
+            Some(r) => r,
+            None => vec::reflect(&unit_direction, &normal),
+        }
     };
 
     let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);

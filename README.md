@@ -8,52 +8,52 @@ A work-in-progress ray tracer written in while learning Rust.
 Rendering a 1200x675 image with 100 samples per pixel and max depth 50
 Rendering Stats:
 --------------------------
-Total Hits: 209332892
-Total Samples: 209332892
+Total Hits: 206050069
+Total Samples: 206050069
 Stat: scene_hit
-  P50: (292ns, 0ns)
-  P90: (625ns, 0ns)
-  P99: (791ns, 0ns)
+  P50: (250ns, 0ns)
+  P90: (334ns, 0ns)
+  P99: (458ns, 0ns)
 
 Stat: scene_sample
   P50: (0ns, 0ns)
   P90: (0ns, 0ns)
   P99: (0ns, 0ns)
 
-Stat: diffuse_hit
-  P50: (209ns, 0ns)
-  P90: (333ns, 0ns)
-  P99: (625ns, 0ns)
+Stat: lambertian_hit
+  P50: (208ns, 0ns)
+  P90: (292ns, 0ns)
+  P99: (500ns, 0ns)
 
-Stat: diffuse_sample
+Stat: lambertian_sample
   P50: (0ns, 42ns)
-  P90: (0ns, 1.625µs)
-  P99: (0ns, 7.043µs)
+  P90: (0ns, 1.375µs)
+  P99: (0ns, 6.167µs)
 
 Stat: metallic_hit
   P50: (208ns, 0ns)
-  P90: (334ns, 0ns)
-  P99: (750ns, 0ns)
+  P90: (292ns, 0ns)
+  P99: (542ns, 0ns)
 
 Stat: metallic_sample
-  P50: (0ns, 333ns)
-  P90: (0ns, 2.042µs)
-  P99: (0ns, 11.919µs)
+  P50: (0ns, 292ns)
+  P90: (0ns, 1.834µs)
+  P99: (0ns, 10.919µs)
 
 Stat: dielectric_hit
-  P50: (292ns, 0ns)
-  P90: (542ns, 0ns)
-  P99: (917ns, 0ns)
+  P50: (250ns, 0ns)
+  P90: (334ns, 0ns)
+  P99: (541ns, 0ns)
 
 Stat: dielectric_sample
-  P50: (0ns, 458ns)
-  P90: (0ns, 1.792µs)
-  P99: (0ns, 7.627µs)
+  P50: (0ns, 375ns)
+  P90: (0ns, 1.625µs)
+  P99: (0ns, 9.751µs)
 
-Total Hit Time: 0h 1m 0s 570ms
-Total Sample Time: 0h 2m 23s 501ms
+Total Hit Time: 0h 0m 46s 457ms
+Total Sample Time: 0h 2m 6s 413ms
 --------------------------
-Overall Total Time: 0h 3m 24s 71ms
+Overall Total Time: 0h 2m 52s 871ms
 --------------------------
 Image saved to output.png
 ```
