@@ -1,17 +1,13 @@
 use std::time;
 
 pub struct Stat {
-    x: u32,
-    y: u32,
     hit_time: time::Duration,
     sample_time: time::Duration,
 }
 
 impl Stat {
-    pub fn new(x: u32, y: u32, hit_time: time::Duration, sample_time: time::Duration) -> Self {
+    pub fn new(hit_time: time::Duration, sample_time: time::Duration) -> Self {
         Stat {
-            x,
-            y,
             hit_time,
             sample_time,
         }
@@ -20,11 +16,15 @@ impl Stat {
 
 pub struct Stats {
     stats: Vec<Stat>,
+    start_time: time::Instant,
 }
 
 impl Stats {
     pub fn new() -> Self {
-        Stats { stats: vec![] }
+        Stats {
+            stats: vec![],
+            start_time: time::Instant::now(),
+        }
     }
 
     pub fn add_stat(&mut self, stat: Stat) {
@@ -33,7 +33,8 @@ impl Stats {
 
     pub fn p50(&self) -> (time::Duration, time::Duration) {
         let mut hit_times: Vec<time::Duration> = self.stats.iter().map(|s| s.hit_time).collect();
-        let mut sample_times: Vec<time::Duration> = self.stats.iter().map(|s| s.sample_time).collect();
+        let mut sample_times: Vec<time::Duration> =
+            self.stats.iter().map(|s| s.sample_time).collect();
 
         hit_times.sort();
         sample_times.sort();
@@ -47,7 +48,8 @@ impl Stats {
 
     pub fn p90(&self) -> (time::Duration, time::Duration) {
         let mut hit_times: Vec<time::Duration> = self.stats.iter().map(|s| s.hit_time).collect();
-        let mut sample_times: Vec<time::Duration> = self.stats.iter().map(|s| s.sample_time).collect();
+        let mut sample_times: Vec<time::Duration> =
+            self.stats.iter().map(|s| s.sample_time).collect();
 
         hit_times.sort();
         sample_times.sort();
@@ -61,7 +63,8 @@ impl Stats {
 
     pub fn p99(&self) -> (time::Duration, time::Duration) {
         let mut hit_times: Vec<time::Duration> = self.stats.iter().map(|s| s.hit_time).collect();
-        let mut sample_times: Vec<time::Duration> = self.stats.iter().map(|s| s.sample_time).collect();
+        let mut sample_times: Vec<time::Duration> =
+            self.stats.iter().map(|s| s.sample_time).collect();
 
         hit_times.sort();
         sample_times.sort();
@@ -82,6 +85,6 @@ impl Stats {
     }
 
     pub fn total_time(&self) -> time::Duration {
-        self.total_hit_time() + self.total_sample_time()
+        self.start_time.elapsed()
     }
 }

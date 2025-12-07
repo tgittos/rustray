@@ -37,6 +37,7 @@ fn metallic_sample(
     let scattered = ray::Ray::new(
         &hit.point,
         &(reflected + vec::random_in_unit_sphere(rng) * metallic.roughness),
+        Some(hit.ray.time),
     );
 
     let mut new_hit_record: Option<hittable::HitRecord> = None;

@@ -1,4 +1,7 @@
 //! Pinhole camera with configurable lens blur and field of view.
+
+use rand::Rng;
+
 use crate::core::ray;
 use crate::core::vec;
 
@@ -30,6 +33,9 @@ pub struct Camera {
     pub horizontal: vec::Vec3,
     pub vertical: vec::Vec3,
     pub up: vec::Vec3,
+    pub u: vec::Vec3,
+    pub v: vec::Vec3,
+    pub w: vec::Vec3,
     pub focal_length: f32,
     pub aperture: f32,
     pub vertical_fov: f32,
@@ -55,17 +61,16 @@ impl Camera {
         let theta = config.vertical_fov.to_radians();
         let half_height = (theta / 2.0).tan();
         let half_width = config.aspect_ratio * half_height;
+        let focus_dist = config.focal_length;
 
         let w = (config.origin - config.look_at).normalize();
         let u = config.up.cross(&w).normalize();
         let v = w.cross(&u);
 
-        let horizontal = u * half_width * 2.0;
-        let vertical = v * half_height * 2.0;
-        let lower_left_corner = config.origin
-            - half_width * config.focal_length * u
-            - half_height * config.focal_length * v
-            - w * config.focal_length;
+        let horizontal = u * half_width * 2.0 * focus_dist;
+        let vertical = v * half_height * 2.0 * focus_dist;
+        let lower_left_corner =
+            config.origin - (horizontal / 2.0) - (vertical / 2.0) - w * focus_dist;
 
         let camera = Camera {
             origin: config.origin,
@@ -73,6 +78,9 @@ impl Camera {
             aperture: config.aperture,
             vertical_fov: config.vertical_fov,
             up: config.up,
+            u,
+            v,
+            w,
             lower_left_corner,
             horizontal,
             vertical,
@@ -97,16 +105,18 @@ impl Camera {
     }
 
     /// Generates a ray through normalized viewport coordinates (`u`, `v`).
-    pub fn get_ray(&self, u: f32, v: f32) -> ray::Ray {
+    pub fn get_ray(&self, rng: &mut rand::rngs::ThreadRng, u: f32, v: f32) -> ray::Ray {
         let lens_radius = self.aperture / 2.0;
-        let rd = lens_radius * vec::random_in_unit_disk(&mut rand::rng());
-        let offset = self.up.cross(&((self.horizontal).normalize())) * rd.x
-            + self.up.cross(&((self.vertical).normalize())) * rd.y;
+        let rd = lens_radius * vec::random_in_unit_disk(rng);
+        let offset = self.u * rd.x + self.v * rd.y;
+        let ray_time = rng.random::<f64>();
+
         ray::Ray {
             origin: self.origin + offset,
             direction: self.lower_left_corner + u * self.horizontal + v * self.vertical
                 - self.origin
                 - offset,
+            time: ray_time,
         }
     }
 }

@@ -48,7 +48,7 @@ fn skybox_sample(
     _scene: &scene::Scene,
     _depth: u32,
 ) -> vec::Vec3 {
-    let unit_direction = vec::unit_vector(&hit_record.hit.point);
+    let unit_direction = vec::unit_vector(&hit_record.hit.ray.direction);
     let t = 0.5 * (unit_direction.y + 1.0);
     bottom_color * (1.0 - t) + top_color * t
 }

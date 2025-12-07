@@ -27,53 +27,41 @@ fn dielectric_sample(
     depth: u32,
 ) -> vec::Vec3 {
     let hit = hit_record.hit;
-    let reflected = vec::reflect(&vec::unit_vector(&hit.ray.direction), &hit.normal);
-    let outward_normal;
-    let ni_over_nt;
-    let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);
-    let cosine;
+    let unit_direction = vec::unit_vector(&hit.ray.direction);
 
-    if hit.ray.direction.dot(&hit.normal) > 0.0 {
-        // Ray is inside the material
-        outward_normal = -hit.normal;
-        ni_over_nt = dielectric.refractive_index;
-        cosine = dielectric.refractive_index * hit.ray.direction.dot(&hit.normal)
-            / hit.ray.direction.length();
+    // Orient the normal against the incoming ray so refraction math is stable.
+    let front_face = unit_direction.dot(&hit.normal) < 0.0;
+    let normal = if front_face { hit.normal } else { -hit.normal };
+    let refraction_ratio = if front_face {
+        1.0 / dielectric.refractive_index
     } else {
-        // Ray is outside the material
-        outward_normal = hit.normal;
-        ni_over_nt = 1.0 / dielectric.refractive_index;
-        cosine = -hit.ray.direction.dot(&hit.normal) / hit.ray.direction.length();
-    }
-
-    let refracted = vec::refract(
-        &vec::unit_vector(&hit.ray.direction),
-        &outward_normal,
-        ni_over_nt,
-    );
-    let scatter_direction = match refracted {
-        Some(refracted) => {
-            let r0 =
-                ((1.0 - dielectric.refractive_index) / (1.0 + dielectric.refractive_index)).powi(2);
-            let reflect_prob = r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
-            if rng.random::<f32>() < reflect_prob {
-                reflected
-            } else {
-                refracted
-            }
-        }
-        None => {
-            // Total internal reflection
-            reflected
-        }
+        dielectric.refractive_index
     };
+
+    let cos_theta = (-unit_direction.dot(&normal)).min(1.0);
+    let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+    let cannot_refract = refraction_ratio * sin_theta > 1.0;
+    let reflectance = {
+        let r0 =
+            ((1.0 - dielectric.refractive_index) / (1.0 + dielectric.refractive_index)).powi(2);
+        r0 + (1.0 - r0) * (1.0 - cos_theta).powi(5)
+    };
+
+    let scatter_direction = if cannot_refract || rng.random::<f32>() < reflectance {
+        vec::reflect(&unit_direction, &normal)
+    } else {
+        vec::refract(&unit_direction, &normal, refraction_ratio).unwrap()
+    };
+
+    let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);
 
     if depth == 0 {
         return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
     if let Some(new_hit_record) = scene.hit(
-        &ray::Ray::new(&hit.point, &scatter_direction),
+        &ray::Ray::new(&hit.point, &scatter_direction, Some(hit.ray.time)),
         0.001,
         f32::MAX,
     ) {

@@ -25,6 +25,15 @@ impl Vec3 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
+    /// Square root of each component.
+    pub fn sqrt(&self) -> Self {
+        Vec3 {
+            x: self.x.sqrt(),
+            y: self.y.sqrt(),
+            z: self.z.sqrt(),
+        }
+    }
+
     /// Returns a normalized copy of the vector.
     pub fn normalize(&self) -> Self {
         let len = self.length();
@@ -158,6 +167,58 @@ impl ops::Mul<&Vec3> for f32 {
     }
 }
 
+impl ops::Mul<Vec3> for f64 {
+    type Output = Vec3;
+
+    fn mul(self, _rhs: Vec3) -> Vec3 {
+        let scalar = self as f32;
+        Vec3 {
+            x: scalar * _rhs.x,
+            y: scalar * _rhs.y,
+            z: scalar * _rhs.z,
+        }
+    }
+}
+
+impl ops::Mul<&Vec3> for f64 {
+    type Output = Vec3;
+
+    fn mul(self, _rhs: &Vec3) -> Vec3 {
+        let scalar = self as f32;
+        Vec3 {
+            x: scalar * _rhs.x,
+            y: scalar * _rhs.y,
+            z: scalar * _rhs.z,
+        }
+    }
+}
+
+impl ops::Mul<f64> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, _rhs: f64) -> Vec3 {
+        let scalar = _rhs as f32;
+        Vec3 {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
+    }
+}
+
+impl ops::Mul<f64> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, _rhs: f64) -> Vec3 {
+        let scalar = _rhs as f32;
+        Vec3 {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
+    }
+}
+
 impl ops::Div<Vec3> for Vec3 {
     type Output = Vec3;
 
@@ -237,6 +298,15 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
         x: v.x / len,
         y: v.y / len,
         z: v.z / len,
+    }
+}
+
+/// Generates a random vector with each component in [0, 1).
+pub fn random<R: rand::Rng>(rng: &mut R) -> Vec3 {
+    Vec3 {
+        x: rng.random::<f32>(),
+        y: rng.random::<f32>(),
+        z: rng.random::<f32>(),
     }
 }
 

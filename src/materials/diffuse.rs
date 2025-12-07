@@ -31,7 +31,7 @@ fn diffuse_sample(
     let target = hit.point + hit.normal + vec::random_in_unit_sphere(rng);
 
     // bounce ray and attenuate
-    let new_ray = ray::Ray::new(&hit.point, &(target - hit.point));
+    let new_ray = ray::Ray::new(&hit.point, &(target - hit.point), Some(hit.ray.time));
     if let Some(new_hit_record) = scene.hit(&new_ray, 0.001, f32::MAX) {
         let bounce = new_hit_record
             .renderable
