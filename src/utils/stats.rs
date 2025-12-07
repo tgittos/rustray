@@ -1,180 +1,174 @@
+use hdrhistogram::Histogram;
+use std::collections::HashMap;
 use std::sync;
 use std::time;
 
+const HIST_LOW: u64 = 1;
+const HIST_HIGH: u64 = 60_000_000_000; // 60s in nanos
+const HIST_SIGFIGS: u8 = 3;
+
+fn make_histogram() -> Histogram<u64> {
+    Histogram::new_with_bounds(HIST_LOW, HIST_HIGH, HIST_SIGFIGS)
+        .expect("failed to initialize stats histogram")
+}
+
 pub struct Stat {
-    name: String,
-    value: time::Duration
+    name: &'static str,
+    value: time::Duration,
 }
 
 impl Stat {
-    pub fn new(name: &str, value: time::Duration) -> Self {
-        Stat {
-            name: name.to_string(),
-            value,
+    pub fn new(name: &'static str, value: time::Duration) -> Self {
+        Stat { name, value }
+    }
+}
+
+#[derive(Clone)]
+pub struct Metric {
+    hist: Histogram<u64>,
+    total: time::Duration,
+    count: u64,
+}
+
+impl Metric {
+    pub fn new() -> Self {
+        Metric {
+            hist: make_histogram(),
+            total: time::Duration::default(),
+            count: 0,
+        }
+    }
+
+    fn record(&mut self, duration: time::Duration) {
+        let nanos = duration
+            .as_nanos()
+            .max(HIST_LOW as u128)
+            .min(HIST_HIGH as u128) as u64;
+
+        // Ignore recording errors; clipping keeps bounds small and predictable.
+        let _ = self.hist.record(nanos);
+        self.total += duration;
+        self.count += 1;
+    }
+
+    fn percentile(&self, quantile: f64) -> time::Duration {
+        if self.count == 0 {
+            time::Duration::default()
+        } else {
+            time::Duration::from_nanos(self.hist.value_at_quantile(quantile))
         }
     }
 }
 
 pub struct Stats {
-    hit_stats: Vec<Stat>,
-    sample_stats: Vec<Stat>,
+    hit_metrics: HashMap<&'static str, Metric>,
+    sample_metrics: HashMap<&'static str, Metric>,
+    all_hit: Metric,
+    all_sample: Metric,
 }
 
 impl Stats {
     pub fn new() -> Self {
         Stats {
-            hit_stats: vec![],
-            sample_stats: vec![],
+            hit_metrics: HashMap::new(),
+            sample_metrics: HashMap::new(),
+            all_hit: Metric::new(),
+            all_sample: Metric::new(),
         }
     }
 
     pub fn add_hit_stat(&mut self, stat: Stat) {
-        self.hit_stats.push(stat);
+        self.all_hit.record(stat.value);
+
+        let entry = self
+            .hit_metrics
+            .entry(stat.name)
+            .or_insert_with(Metric::new);
+        entry.record(stat.value);
     }
 
     pub fn add_sample_stat(&mut self, stat: Stat) {
-        self.sample_stats.push(stat);
+        self.all_sample.record(stat.value);
+
+        let entry = self
+            .sample_metrics
+            .entry(stat.name)
+            .or_insert_with(Metric::new);
+        entry.record(stat.value);
+    }
+
+    fn percentile_for(
+        map: &HashMap<&'static str, Metric>,
+        name: &str,
+        quantile: f64,
+    ) -> time::Duration {
+        map.get(name)
+            .map(|metric| metric.percentile(quantile))
+            .unwrap_or_default()
     }
 
     pub fn p50_by_name(&self, name: &str) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self
-            .hit_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-        let mut sample_times: Vec<time::Duration> = self
-            .sample_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let mid = hit_times.len() / 2;
-        let p50_hit = hit_times[mid];
-        let p50_sample = sample_times[mid];
-
-        (p50_hit, p50_sample)
+        (
+            Self::percentile_for(&self.hit_metrics, name, 0.50),
+            Self::percentile_for(&self.sample_metrics, name, 0.50),
+        )
     }
 
     pub fn p50(&self) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self.hit_stats.iter().map(|s| s.value).collect();
-        let mut sample_times: Vec<time::Duration> =
-            self.sample_stats.iter().map(|s| s.value).collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let mid = hit_times.len() / 2;
-        let p50_hit = hit_times[mid];
-        let p50_sample = sample_times[mid];
-
-        (p50_hit, p50_sample)
+        (
+            self.all_hit.percentile(0.50),
+            self.all_sample.percentile(0.50),
+        )
     }
 
     pub fn p90(&self) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self.hit_stats.iter().map(|s| s.value).collect();
-        let mut sample_times: Vec<time::Duration> =
-            self.sample_stats.iter().map(|s| s.value).collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let idx = (hit_times.len() as f32 * 0.9).ceil() as usize - 1;
-        let p90_hit = hit_times[idx];
-        let p90_sample = sample_times[idx];
-
-        (p90_hit, p90_sample)
+        (
+            self.all_hit.percentile(0.90),
+            self.all_sample.percentile(0.90),
+        )
     }
 
     pub fn p90_by_name(&self, name: &str) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self
-            .hit_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-        let mut sample_times: Vec<time::Duration> = self
-            .sample_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let idx = (hit_times.len() as f32 * 0.9).ceil() as usize - 1;
-        let p90_hit = hit_times[idx];
-        let p90_sample = sample_times[idx];
-
-        (p90_hit, p90_sample)
+        (
+            Self::percentile_for(&self.hit_metrics, name, 0.90),
+            Self::percentile_for(&self.sample_metrics, name, 0.90),
+        )
     }
 
     pub fn p99(&self) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self.hit_stats.iter().map(|s| s.value).collect();
-        let mut sample_times: Vec<time::Duration> =
-            self.sample_stats.iter().map(|s| s.value).collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let idx = (hit_times.len() as f32 * 0.99).ceil() as usize - 1;
-        let p99_hit = hit_times[idx];
-        let p99_sample = sample_times[idx];
-
-        (p99_hit, p99_sample)
+        (
+            self.all_hit.percentile(0.99),
+            self.all_sample.percentile(0.99),
+        )
     }
 
     pub fn p99_by_name(&self, name: &str) -> (time::Duration, time::Duration) {
-        let mut hit_times: Vec<time::Duration> = self
-            .hit_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-        let mut sample_times: Vec<time::Duration> = self
-            .sample_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .collect();
-
-        hit_times.sort();
-        sample_times.sort();
-
-        let idx = (hit_times.len() as f32 * 0.99).ceil() as usize - 1;
-        let p99_hit = hit_times[idx];
-        let p99_sample = sample_times[idx];
-
-        (p99_hit, p99_sample)
+        (
+            Self::percentile_for(&self.hit_metrics, name, 0.99),
+            Self::percentile_for(&self.sample_metrics, name, 0.99),
+        )
     }
 
     pub fn total_hit_time(&self) -> time::Duration {
-        self.hit_stats.iter().map(|s| s.value).sum()
+        self.all_hit.total
     }
 
     pub fn total_hit_time_by_name(&self, name: &str) -> time::Duration {
-        self.hit_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .sum()
+        self.hit_metrics
+            .get(name)
+            .map(|metric| metric.total)
+            .unwrap_or_default()
     }
 
     pub fn total_sample_time(&self) -> time::Duration {
-        self.sample_stats.iter().map(|s| s.value).sum()
+        self.all_sample.total
     }
 
     pub fn total_sample_time_by_name(&self, name: &str) -> time::Duration {
-        self.sample_stats
-            .iter()
-            .filter(|s| s.name == name)
-            .map(|s| s.value)
-            .sum()
+        self.sample_metrics
+            .get(name)
+            .map(|metric| metric.total)
+            .unwrap_or_default()
     }
 
     pub fn total_time(&self) -> time::Duration {
@@ -186,22 +180,22 @@ impl Stats {
     }
 
     pub fn total_hits(&self) -> usize {
-        self.hit_stats.len()
+        self.all_hit.count as usize
     }
 
     pub fn total_samples(&self) -> usize {
-        self.sample_stats.len()
+        self.all_sample.count as usize
     }
 }
 
-pub static DIELECTRIC_HIT:  &str = "dielectric_hit";
-pub static DIELECTRIC_SAMPLE:  &str = "dielectric_sample";
-pub static DIFFUSE_HIT:  &str = "diffuse_hit";
-pub static DIFFUSE_SAMPLE:  &str = "diffuse_sample";
-pub static METALLIC_HIT:  &str = "metallic_hit";
-pub static METALLIC_SAMPLE:  &str = "metallic_sample";
-pub static SCENE_HIT:  &str = "scene_hit";
-pub static SCENE_SAMPLE:  &str = "scene_sample";
+pub static DIELECTRIC_HIT: &str = "dielectric_hit";
+pub static DIELECTRIC_SAMPLE: &str = "dielectric_sample";
+pub static DIFFUSE_HIT: &str = "diffuse_hit";
+pub static DIFFUSE_SAMPLE: &str = "diffuse_sample";
+pub static METALLIC_HIT: &str = "metallic_hit";
+pub static METALLIC_SAMPLE: &str = "metallic_sample";
+pub static SCENE_HIT: &str = "scene_hit";
+pub static SCENE_SAMPLE: &str = "scene_sample";
 
 static STATS: sync::LazyLock<sync::Mutex<Stats>> =
     sync::LazyLock::new(|| sync::Mutex::new(Stats::new()));

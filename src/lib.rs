@@ -57,14 +57,13 @@ pub fn raytrace(
 
                         let hit_start = time::Instant::now();
                         if let Some(hit) = scene.hit(&r, 0.001, f32::MAX) {
-                            stats::add_hit_stat(stats::Stat::new(
-                                "scene_hit", hit_start.elapsed()
-                            ));
+                            stats::add_hit_stat(stats::Stat::new("scene_hit", hit_start.elapsed()));
 
                             let sample_start = time::Instant::now();
                             col = col + hit.renderable.sample(rng, &hit, &scene, max_depth);
                             stats::add_sample_stat(stats::Stat::new(
-                                "material_sample", sample_start.elapsed()
+                                "material_sample",
+                                sample_start.elapsed(),
                             ));
                         }
                     }
@@ -93,7 +92,6 @@ pub fn raytrace(
         })
         .collect::<Vec<u8>>();
 
-    /*
     let stats = stats::get_stats();
 
     println!("Rendering Stats:");
@@ -118,12 +116,11 @@ pub fn raytrace(
             stats.p99_by_name(stat_name)
         );
     });
-    println!("Total Hit Time: {:?}", format_duration(stats.total_hit_time()));
-    println!("Total Sample Time: {:?}", format_duration(stats.total_sample_time()));
+    println!("Total Hit Time: {}", format_duration(stats.total_hit_time()));
+    println!("Total Sample Time: {}", format_duration(stats.total_sample_time()));
     println!("--------------------------");
     println!("Overall Total Time: {}", format_duration(stats.total_time()));
     println!("--------------------------");
-    */
 
     image_data
 }

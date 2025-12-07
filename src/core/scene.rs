@@ -70,9 +70,7 @@ fn scene_hit<'a>(
     for object in scene.objects.objects.iter() {
         let hit_start = time::Instant::now();
         if let Some(temp_record) = object.hit(ray, t_min, closest_so_far) {
-            // stats::add_hit_stat(stats::Stat::new(
-            //     stats::SCENE_HIT, hit_start.elapsed()
-            // ));
+            stats::add_hit_stat(stats::Stat::new(stats::SCENE_HIT, hit_start.elapsed()));
 
             closest_so_far = temp_record.hit.t;
             hit_record = Some(temp_record);
@@ -91,9 +89,10 @@ fn scene_sample(
 ) -> vec::Vec3 {
     let sample_start = time::Instant::now();
     let result = hit_record.renderable.sample(rng, hit_record, scene, depth);
-    // stats::add_sample_stat(stats::Stat::new(
-    //     stats::SCENE_SAMPLE, sample_start.elapsed()
-    // ));
+    stats::add_sample_stat(stats::Stat::new(
+        stats::SCENE_SAMPLE,
+        sample_start.elapsed(),
+    ));
     result
 }
 

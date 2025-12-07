@@ -68,18 +68,17 @@ fn dielectric_sample(
         0.001,
         f32::MAX,
     ) {
-        //stats::add_hit_stat(stats::Stat::new(
-        //    stats::DIELECTRIC_HIT, hit_start.elapsed()
-        //));
+        stats::add_hit_stat(stats::Stat::new(stats::DIELECTRIC_HIT, hit_start.elapsed()));
 
         let sample_start = time::Instant::now();
         let bounce = new_hit_record
             .renderable
             .sample(rng, &new_hit_record, scene, depth - 1);
 
-        //stats::add_sample_stat(stats::Stat::new(
-        //    stats::DIELECTRIC_SAMPLE, sample_start.elapsed()
-        //));
+        stats::add_sample_stat(stats::Stat::new(
+            stats::DIELECTRIC_SAMPLE,
+            sample_start.elapsed(),
+        ));
 
         attenuation * bounce
     } else {
