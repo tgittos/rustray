@@ -34,6 +34,15 @@ impl Sphere {
             radius,
         }
     }
+
+    fn get_uv(p_unit: &vec::Vec3) -> (f32, f32) {
+        // p_unit is expected to be the unit normal pointing outward from the sphere.
+        let theta = (-p_unit.y).acos();
+        let phi = -p_unit.z.atan2(p_unit.x) + std::f32::consts::PI;
+        let u = phi / (2.0 * std::f32::consts::PI);
+        let v = theta / std::f32::consts::PI;
+        (u, v)
+    }
 }
 
 impl hittable::Hittable for Sphere {
@@ -57,13 +66,14 @@ impl hittable::Hittable for Sphere {
                 if temp < t_max && temp > t_min {
                     let point = ray.point_at(temp);
                     let normal = (point - current_center) / self.radius;
+                    let (u, v) = Sphere::get_uv(&normal);
                     return Some(hittable::Hit {
                         ray: ray.clone(),
                         t: temp,
                         point,
                         normal,
-                        u: 0.0,
-                        v: 0.0,
+                        u,
+                        v,
                     });
                 }
             }

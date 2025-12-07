@@ -46,10 +46,7 @@ fn diffuse_sample(
             stats::LAMBERTIAN_SAMPLE,
             sample_start.elapsed(),
         ));
-        return diffuse
-            .texture
-            .value(hit_record.hit.u, hit_record.hit.v, &hit.point)
-            * (0.5 * bounce);
+        return diffuse.texture.sample(&hit_record.hit) * (0.5 * bounce);
     }
 
     // miss

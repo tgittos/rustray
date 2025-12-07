@@ -69,7 +69,11 @@ impl Texture {
                 color1,
                 color2,
                 scale,
-            } => Box::new(checker::CheckerTexture::new(*color1, *color2, *scale)),
+            } => Box::new(checker::CheckerTexture::new(
+                color::ColorTexture::new(*color1),
+                color::ColorTexture::new(*color2),
+                *scale,
+            )),
         }
     }
 }

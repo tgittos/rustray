@@ -5,15 +5,6 @@ use crate::traits::hittable;
 /// Trait for objects that can be sampled for color contribution.
 pub trait Sampleable {
     /// Samples the color contribution at the hit point.
-    ///
-    /// # Arguments
-    /// * `rng` - A mutable reference to a random number generator.
-    /// * [`hittable::HitRecord`] `hit_record` - The hit record containing information about the intersection.
-    /// * [`scene::Scene`] `scene` - The scene containing all objects.
-    /// * `depth` - The current recursion depth.
-    ///
-    /// # Returns
-    /// A [`vec::Vec3`] Vec3 representing the color contribution.
     fn sample(
         &self,
         rng: &mut rand::rngs::ThreadRng,

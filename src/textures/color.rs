@@ -18,7 +18,7 @@ impl ColorTexture {
 }
 
 impl texturable::Texturable for ColorTexture {
-    fn value(&self, _u: f32, _v: f32, _p: &vec::Point3) -> vec::Vec3 {
+    fn sample(&self, _hit_record: &crate::traits::hittable::Hit) -> vec::Vec3 {
         self.albedo
     }
 }

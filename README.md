@@ -2,7 +2,7 @@
 
 A work-in-progress ray tracer written while learning Rust.
 
-![](output.png)
+![](samples/bouncing_spheres.png)
 
 ```
 Rendering a 1200x675 image with 100 samples per pixel and max depth 50
