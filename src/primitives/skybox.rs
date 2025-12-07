@@ -1,8 +1,6 @@
 //! Procedural sky gradient that acts as both geometry and material.
-use crate::core::{ray, scene, vec};
-use crate::traits::hittable;
-use crate::traits::renderable;
-use crate::traits::sampleable;
+use crate::core::{bbox, ray, scene, vec};
+use crate::traits::{hittable, renderable, sampleable};
 
 #[derive(Clone, Copy)]
 /// Background gradient defined by top and bottom colors.
@@ -27,8 +25,8 @@ fn skybox_hit(ray: &ray::Ray, _t_min: f32, t_max: f32) -> Option<hittable::Hit> 
     if t_max < f32::MAX {
         return None;
     }
-    let unit_direction = vec::unit_vector(&ray.direction);
-    let t = 0.5 * (unit_direction.y + 1.0);
+    // Use a very large t so the BVH traversal doesn't prune foreground geometry.
+    let t = f32::MAX;
     let point = ray.point_at(1.0); // arbitrary point along the ray
     let normal = vec::Vec3::new(0.0, 0.0, 0.0); // normal is not used for skybox
     Some(hittable::Hit {
@@ -56,6 +54,14 @@ fn skybox_sample(
 impl hittable::Hittable for Skybox {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         skybox_hit(ray, t_min, t_max)
+    }
+
+    fn bounding_box(&self) -> bbox::BBox {
+        // Skybox is infinite; return a large bounding box.
+        bbox::BBox::bounding(
+            vec::Vec3::new(-f32::MAX, -f32::MAX, -f32::MAX),
+            vec::Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+        )
     }
 }
 
@@ -92,6 +98,14 @@ impl renderable::Renderable for Skybox {
         };
 
         Some(hit_record)
+    }
+
+    fn bounding_box(&self) -> bbox::BBox {
+        // Skybox is infinite; return a large bounding box.
+        bbox::BBox::bounding(
+            vec::Vec3::new(-f32::MAX, -f32::MAX, -f32::MAX),
+            vec::Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+        )
     }
 
     fn sample(

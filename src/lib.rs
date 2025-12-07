@@ -37,8 +37,6 @@ pub fn raytrace(
     ns: Option<u32>,
     max_depth: Option<u32>,
 ) -> Vec<u8> {
-    let mut stats = stats::Stats::new();
-
     let height = (width as f32 / aspect_ratio) as u32;
     let ns = ns.unwrap_or(50);
     let max_depth = max_depth.unwrap_or(8);
@@ -59,13 +57,15 @@ pub fn raytrace(
 
                         let hit_start = time::Instant::now();
                         if let Some(hit) = scene.hit(&r, 0.001, f32::MAX) {
-                            let hit_elapsed = hit_start.elapsed();
+                            stats::add_hit_stat(stats::Stat::new(
+                                "scene_hit", hit_start.elapsed()
+                            ));
 
                             let sample_start = time::Instant::now();
                             col = col + hit.renderable.sample(rng, &hit, &scene, max_depth);
-                            let sample_elapsed = sample_start.elapsed();
-
-                            stats.add_stat(stats::Stat::new(hit_elapsed, sample_elapsed));
+                            stats::add_sample_stat(stats::Stat::new(
+                                "material_sample", sample_start.elapsed()
+                            ));
                         }
                     }
 
@@ -80,6 +80,7 @@ pub fn raytrace(
 
     let image_data = pixel_cols
         .into_iter()
+        .rev()
         .flat_map(|row| {
             row.into_iter()
                 .flat_map(|col| {
@@ -92,16 +93,45 @@ pub fn raytrace(
         })
         .collect::<Vec<u8>>();
 
+    /*
+    let stats = stats::get_stats();
+
     println!("Rendering Stats:");
     println!("--------------------------");
-    println!("P50: {:?}", stats.p50());
-    println!("P90: {:?}", stats.p90());
-    println!("P99: {:?}", stats.p99());
-    println!("Total Hit Time: {:?}", stats.total_hit_time());
-    println!("Total Sample Time: {:?}", stats.total_sample_time());
+    println!("Total Hits: {}", stats.total_hits());
+    println!("Total Samples: {}", stats.total_samples());
+    vec![
+        stats::SCENE_HIT,
+        stats::SCENE_SAMPLE,
+        stats::DIFFUSE_HIT,
+        stats::DIFFUSE_SAMPLE,
+        stats::METALLIC_HIT,
+        stats::METALLIC_SAMPLE,
+        stats::DIELECTRIC_HIT,
+        stats::DIELECTRIC_SAMPLE,
+    ].iter().for_each(|stat_name| {
+        println!(
+            "Stat: {}\n  P50: {:?}\n  P90: {:?}\n  P99: {:?}\n",
+            stat_name,
+            stats.p50_by_name(stat_name),
+            stats.p90_by_name(stat_name),
+            stats.p99_by_name(stat_name)
+        );
+    });
+    println!("Total Hit Time: {:?}", format_duration(stats.total_hit_time()));
+    println!("Total Sample Time: {:?}", format_duration(stats.total_sample_time()));
     println!("--------------------------");
-    println!("Total Time: {:?}", stats.total_time());
+    println!("Overall Total Time: {}", format_duration(stats.total_time()));
     println!("--------------------------");
+    */
 
     image_data
+}
+
+fn format_duration(dur: time::Duration) -> String {
+    let hours = dur.as_secs() / 3600;
+    let minutes = (dur.as_secs() % 3600) / 60;
+    let seconds = dur.as_secs() % 60;
+    let millis = dur.subsec_millis();
+    format!("{}h {}m {}s {}ms", hours, minutes, seconds, millis)
 }

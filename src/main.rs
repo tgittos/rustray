@@ -1,7 +1,9 @@
-//! Binary entry point that renders the demo scene to `output.ppm`.
-mod formats;
+//! Binary entry point that renders the demo scene to `output.png`.
+extern crate image;
+extern crate rand;
 
 use rand::Rng;
+use std::path::Path;
 
 use rustray::core::{camera, scene, vec};
 use rustray::materials::{dielectric, diffuse, metallic};
@@ -9,13 +11,11 @@ use rustray::primitives::{skybox, sphere};
 use rustray::raytrace;
 use rustray::traits::{renderable, sampleable};
 
-use formats::ppm;
-
 fn main() {
     let mut rng = rand::rng();
 
-    // let nx = 1200;
-    let nx = 400;
+    let nx = 1200;
+    //let nx = 400;
     let ar = 16.0 / 9.0;
     let ny = (nx as f32 / ar) as u32;
     let ns = 100; // samples per pixel
@@ -120,21 +120,18 @@ fn main() {
     scene.add_object(Box::new(world));
     scene.add_object(Box::new(skybox));
 
+    scene.build_bvh(&mut rng);
+
     let data = raytrace(&mut rng, nx, ar, &camera, &scene, Some(ns), Some(max_depth));
 
-    let mut ppm_image = ppm::new_ppm_image(nx as usize, ny as usize, None);
-
-    for y in 0..ppm_image.height {
-        for x in 0..ppm_image.width {
-            let offset = (y * ppm_image.width + x) * 3;
-            ppm_image.data[offset] = (data[offset]) as u8; // R
-            ppm_image.data[offset + 1] = (data[offset + 1]) as u8; // G
-            ppm_image.data[offset + 2] = (data[offset + 2]) as u8; // B
-        }
-    }
-
-    match ppm::write_ppm("output.ppm", ppm_image) {
-        Ok(_) => println!("PPM image written successfully."),
-        Err(e) => eprintln!("Error writing PPM image: {}", e),
+    match image::save_buffer(
+        &Path::new("output.png"),
+        data.as_slice(),
+        nx,
+        ny,
+        image::ColorType::Rgb8,
+    ) {
+        Ok(_) => println!("Image saved to output.png"),
+        Err(e) => eprintln!("Failed to save image: {}", e),
     }
 }

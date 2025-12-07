@@ -1,5 +1,5 @@
 //! Basic sphere geometry implementing the `Hittable` trait.
-use crate::core::{ray, vec};
+use crate::core::{bbox, ray, vec};
 use crate::traits::hittable;
 
 #[derive(Debug, Clone)]
@@ -68,10 +68,27 @@ impl hittable::Hittable for Sphere {
         }
         None
     }
+
+    fn bounding_box(&self) -> bbox::BBox {
+        let radius_vec = vec::Vec3::new(self.radius, self.radius, self.radius);
+        let t0_bb = bbox::BBox::bounding(
+            self.center.point_at(0.0) - radius_vec,
+            self.center.point_at(0.0) + radius_vec,
+        );
+        let t1_bb = bbox::BBox::bounding(
+            self.center.point_at(1.0) - radius_vec,
+            self.center.point_at(1.0) + radius_vec,
+        );
+        t0_bb.union(&t1_bb)
+    }
 }
 
 impl hittable::Hittable for &Sphere {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         (**self).hit(ray, t_min, t_max)
+    }
+
+    fn bounding_box(&self) -> crate::core::bbox::BBox {
+        (**self).bounding_box()
     }
 }

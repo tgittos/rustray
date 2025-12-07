@@ -355,3 +355,5 @@ pub fn refract(v: &Vec3, n: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
         None
     }
 }
+
+pub type Point3 = Vec3;

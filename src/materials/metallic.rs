@@ -1,8 +1,11 @@
 //! Reflective metallic material with optional roughness for blurred reflections.
+use std::time;
+
 use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable;
+use crate::utils::stats;
 
 /// Mirror-like surface with an albedo tint and surface roughness.
 pub struct Metallic {
@@ -42,18 +45,28 @@ fn metallic_sample(
 
     let mut new_hit_record: Option<hittable::HitRecord> = None;
 
+    let hit_start = time::Instant::now();
     if let Some(record) = scene.hit(&scattered, 0.001, f32::MAX) {
         new_hit_record = Some(record);
     }
+    // stats::add_hit_stat(stats::Stat::new(
+    //     stats::METALLIC_HIT, hit_start.elapsed()
+    // ));
 
     if new_hit_record.is_none() {
         return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
     let new_hit_record = new_hit_record.unwrap();
+    let sample_start = time::Instant::now();
     let bounce = new_hit_record
         .renderable
         .sample(rng, &new_hit_record, scene, depth - 1);
+
+    // stats::add_sample_stat(stats::Stat::new(
+    //     stats::METALLIC_SAMPLE, sample_start.elapsed()
+    // ));
+
     return metallic.albedo * bounce;
 }
 

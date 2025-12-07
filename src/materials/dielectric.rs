@@ -1,10 +1,12 @@
 //! Transparent material that refracts and reflects based on a refractive index.
 use rand::Rng;
+use std::time;
 
 use crate::core::{ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable::Sampleable;
+use crate::utils::stats;
 
 /// Glass-like dielectric material with a configurable refractive index.
 pub struct Dielectric {
@@ -60,14 +62,25 @@ fn dielectric_sample(
         return vec::Vec3::new(0.0, 0.0, 0.0);
     }
 
+    let hit_start = time::Instant::now();
     if let Some(new_hit_record) = scene.hit(
         &ray::Ray::new(&hit.point, &scatter_direction, Some(hit.ray.time)),
         0.001,
         f32::MAX,
     ) {
+        //stats::add_hit_stat(stats::Stat::new(
+        //    stats::DIELECTRIC_HIT, hit_start.elapsed()
+        //));
+
+        let sample_start = time::Instant::now();
         let bounce = new_hit_record
             .renderable
             .sample(rng, &new_hit_record, scene, depth - 1);
+
+        //stats::add_sample_stat(stats::Stat::new(
+        //    stats::DIELECTRIC_SAMPLE, sample_start.elapsed()
+        //));
+
         attenuation * bounce
     } else {
         vec::Vec3::new(0.0, 0.0, 0.0)

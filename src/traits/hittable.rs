@@ -1,6 +1,5 @@
 //! Abstractions for geometry that can be intersected by rays.
-use crate::core::ray;
-use crate::core::vec;
+use crate::core::{bbox, ray, vec};
 use crate::traits::renderable;
 
 /// Information about a ray-object intersection.
@@ -22,6 +21,9 @@ pub trait Hittable {
     /// Bounds intersection tests between t_min and t_max.
     /// Returns Some([`Hit`]) if there is a hit, otherwise None.
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<Hit>;
+
+    /// Returns the bounding box of the object.
+    fn bounding_box(&self) -> bbox::BBox;
 }
 
 /// A record of a hit, associating the hit information with the renderable object.
