@@ -1,11 +1,13 @@
 //! Pinhole camera with configurable lens blur and field of view.
 
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::core::ray;
 use crate::core::vec;
 
 /// Parameters used to build a [`Camera`].
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct CameraConfig {
     /// Camera position.
     pub origin: vec::Vec3,

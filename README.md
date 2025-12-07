@@ -1,6 +1,6 @@
 # rustray
 
-A work-in-progress ray tracer written in while learning Rust.
+A work-in-progress ray tracer written while learning Rust.
 
 ![](output.png)
 

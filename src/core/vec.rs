@@ -1,4 +1,5 @@
 //! Basic 3D vector math used throughout the ray tracer.
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops;
 
 #[derive(Debug)]
@@ -290,6 +291,25 @@ impl Clone for Vec3 {
 }
 
 impl Copy for Vec3 {}
+
+impl Serialize for Vec3 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        [self.x, self.y, self.z].serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Vec3 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let values = <[f32; 3]>::deserialize(deserializer)?;
+        Ok(Vec3::new(values[0], values[1], values[2]))
+    }
+}
 
 /// Returns a unit-length copy of `v`.
 pub fn unit_vector(v: &Vec3) -> Vec3 {
