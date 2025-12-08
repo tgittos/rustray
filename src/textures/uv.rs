@@ -1,8 +1,8 @@
 extern crate image;
 
-use crate::traits::texturable;
-use crate::core::{vec, interval};
+use crate::core::{interval, vec};
 use crate::traits::hittable;
+use crate::traits::texturable;
 
 pub struct UvTexture {
     data: Vec<u8>,
@@ -12,8 +12,7 @@ pub struct UvTexture {
 
 impl UvTexture {
     pub fn new(path: &str) -> Self {
-        let img = image::open(path)
-            .expect("Failed to open UV texture image");
+        let img = image::open(path).expect("Failed to open UV texture image");
         let img = img.to_rgb8();
         let (width, height) = img.dimensions();
         let data = img.into_raw();

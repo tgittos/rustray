@@ -5,11 +5,9 @@ use std::{fs, path::Path, time};
 use crate::core::{bvh, camera, ray, vec};
 use crate::materials::{dielectric, lambertian, metallic};
 use crate::primitives::{skybox, sphere};
-use crate::textures::{checker, color, uv};
-use crate::traits::hittable;
-use crate::traits::renderable;
+use crate::textures::{checker, color, noise, uv};
 use crate::traits::renderable::Renderable;
-use crate::traits::{sampleable, texturable};
+use crate::traits::{hittable, renderable, sampleable, texturable};
 use crate::utils::stats;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -62,6 +60,9 @@ pub enum Texture {
     Uv {
         path: String,
     },
+    Noise {
+        scale: f64,
+    },
 }
 
 impl Texture {
@@ -78,6 +79,11 @@ impl Texture {
                 *scale,
             )),
             Texture::Uv { path } => Box::new(uv::UvTexture::new(path)),
+            Texture::Noise { scale } => Box::new(noise::NoiseTexture::new(
+                // TODO: Pass RNG from higher up
+                &mut rand::rng(),
+                *scale,
+            )),
         }
     }
 }
