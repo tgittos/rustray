@@ -3,7 +3,7 @@ use std::mem;
 
 use crate::core::{interval, ray, vec};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct BBox {
     pub x: interval::Interval,
     pub y: interval::Interval,
@@ -12,7 +12,9 @@ pub struct BBox {
 
 impl BBox {
     pub fn new(x: interval::Interval, y: interval::Interval, z: interval::Interval) -> Self {
-        BBox { x, y, z }
+        let inst = BBox { x, y, z };
+        inst.pad_to_min(0.0001);
+        inst
     }
 
     pub fn bounding(min: vec::Point3, max: vec::Point3) -> Self {
@@ -51,6 +53,18 @@ impl BBox {
             1
         } else {
             2
+        }
+    }
+
+    pub fn pad_to_min(&self, delta: f32) {
+        if self.x.length() < delta {
+            self.x.expand(delta);
+        }
+        if self.y.length() < delta {
+            self.y.expand(delta);
+        }
+        if self.z.length() < delta {
+            self.z.expand(delta);
         }
     }
 

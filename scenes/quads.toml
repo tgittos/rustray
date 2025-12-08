@@ -1,0 +1,185 @@
+[render]
+width = 400
+aspect_ratio = 1.0
+samples = 100
+depth = 50
+
+[camera]
+origin = [
+    0.0,
+    0.0,
+    9.0,
+]
+look_at = [
+    0.0,
+    0.0,
+    0.0,
+]
+up = [
+    0.0,
+    1.0,
+    0.0,
+]
+aspect_ratio = 1.0
+viewport_height = 2.0
+focal_length = 10.0
+aperture = 0.0
+vertical_fov = 80.0
+
+[[objects]]
+type = "skybox"
+top_color = [
+    0.5,
+    0.699999988079071,
+    1.0,
+]
+bottom_color = [
+    1.0,
+    1.0,
+    1.0,
+]
+
+[[objects]]
+type = "quad"
+q = [
+    -3.0,
+    -2.0,
+    5.0,
+] 
+u = [
+    0.0,
+    0.0,
+    -4.0,
+]
+v = [
+    0.0,
+    4.0,
+    0.0,
+]
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    1.0,
+    0.2,
+    0.2,
+]
+
+[[objects]]
+type = "quad"
+q = [
+    -2.0,
+    -2.0,
+    0.0
+]
+u = [
+    4.0,
+    0.0,
+    0.0,
+]
+v = [
+    0.0,
+    4.0,
+    0.0,
+]
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    0.2,
+    1.0,
+    0.2,
+]
+
+[[objects]]
+type = "quad"
+q = [
+    3.0,
+    -2.0,
+    1.0,
+]
+u = [
+    0.0,
+    0.0,
+    4.0,
+]
+v = [
+    0.0,
+    4.0,
+    0.0,
+]
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    0.2,
+    0.2,
+    1.0,
+]
+
+[[objects]]
+type = "quad"
+q = [
+    -2.0,
+    3.0,
+    1.0,
+]
+u = [
+    4.0,
+    0.0,
+    0.0,
+]
+v = [
+    0.0,
+    0.0,
+    4.0,
+]
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    1.0,
+    0.5,
+    0.0,
+]
+
+[[objects]]
+type = "quad"
+q = [
+    -2.0,
+    -3.0,
+    5.0,
+]
+u = [
+    4.0,
+    0.0,
+    0.0,
+]
+v = [
+    0.0,
+    0.0,
+    -4.0,
+]
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    0.2,
+    0.8,
+    0.8,
+]

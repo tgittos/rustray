@@ -4,7 +4,7 @@ use std::{fs, path::Path, time};
 
 use crate::core::{bvh, camera, ray, vec};
 use crate::materials::{dielectric, lambertian, metallic};
-use crate::primitives::{skybox, sphere};
+use crate::primitives::{quad, skybox, sphere};
 use crate::textures::{checker, color, noise, uv};
 use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, renderable, sampleable, texturable};
@@ -115,6 +115,12 @@ impl Material {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SceneObject {
+    Quad {
+        q: vec::Point3,
+        u: vec::Vec3,
+        v: vec::Vec3,
+        material: Material,
+    },
     Sphere {
         center: vec::Vec3,
         radius: f32,
@@ -131,6 +137,11 @@ pub enum SceneObject {
 impl SceneObject {
     fn to_renderable(&self) -> Box<dyn renderable::Renderable> {
         match self {
+            SceneObject::Quad { q, u, v, material } => {
+                let hittable: Box<dyn hittable::Hittable> = Box::new(quad::Quad::new(*q, *u, *v));
+                let sampleable = material.to_sampleable();
+                Box::new(renderable::create_renderable(hittable, sampleable))
+            }
             SceneObject::Sphere {
                 center,
                 radius,

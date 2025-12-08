@@ -1,6 +1,6 @@
 /// Represents a one-dimensional interval [min, max].
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Interval {
     pub min: f32,
     pub max: f32,
