@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs, path::Path, time};
 
 use crate::core::{bvh, camera, ray, vec};
-use crate::materials::{dielectric, lambertian, metallic};
+use crate::materials::{dielectric, diffuse_light, lambertian, metallic};
 use crate::primitives::{quad, skybox, sphere};
 use crate::textures::{checker, color, noise, uv};
 use crate::traits::renderable::Renderable;
@@ -94,6 +94,7 @@ pub enum Material {
     Lambertian { texture: Texture },
     Metallic { albedo: vec::Vec3, roughness: f32 },
     Dielectric { refractive_index: f32 },
+    DiffuseLight { texture: Texture },
 }
 
 impl Material {
@@ -107,6 +108,9 @@ impl Material {
             }
             Material::Dielectric { refractive_index } => {
                 Box::new(dielectric::Dielectric::new(*refractive_index))
+            }
+            Material::DiffuseLight { texture } => {
+                Box::new(diffuse_light::DiffuseLight::new(texture.to_texturable()))
             }
         }
     }

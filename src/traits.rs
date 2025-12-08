@@ -16,6 +16,10 @@
 //! # Texturable
 //! The [texturable::Texturable] trait defines objects that can provide texture color values
 //! based on texture coordinates and points in space.
+//!
+//! # Emittable
+//! The [emittable::Emittable] trait defines objects that can emit light. It includes a method to get the emitted color
+//! at a given hit record.
 
 pub mod hittable;
 pub mod renderable;

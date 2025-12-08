@@ -1,0 +1,88 @@
+[render]
+width = 400
+aspect_ratio = 1.7777777910232544
+samples = 100
+depth = 50
+
+[camera]
+origin = [
+    26.0,
+    3.0,
+    6.0,
+]
+look_at = [
+    0.0,
+    2.0,
+    0.0,
+]
+up = [
+    0.0,
+    1.0,
+    0.0,
+]
+aspect_ratio = 1.7777777910232544
+viewport_height = 2.0
+focal_length = 10.0
+aperture = 0.0
+vertical_fov = 20.0
+
+[[objects]]
+type = "sphere"
+center = [
+    0.0,
+    -1000.0,
+    0.0,
+]
+radius = 1000.0
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "noise"
+scale = 0.1
+
+[[objects]]
+type = "sphere"
+center = [
+    0.0,
+    2.0,
+    0.0,
+]
+radius = 2.0
+
+[objects.material]
+type = "lambertian"
+
+[objects.material.texture]
+type = "noise"
+scale = 4.0
+
+[[objects]]
+type = "quad"
+q = [
+    3.0,
+    1.0,
+    -2.0,
+]
+u = [
+    2.0,
+    0.0,
+    0.0,
+]
+v = [
+    0.0,
+    2.0,
+    0.0,
+]
+
+[objects.material]
+type = "diffuse_light"
+
+[objects.material.texture]
+type = "color"
+albedo = [
+    4.0,
+    4.0,
+    4.0,
+]
