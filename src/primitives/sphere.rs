@@ -1,8 +1,10 @@
 //! Basic sphere geometry implementing the `Hittable` trait.
+use serde::{Deserialize, Serialize};
+
 use crate::core::{bbox, ray, vec};
 use crate::traits::hittable;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Sphere positioned at `center` with a `radius`.
 pub struct Sphere {
     pub center: ray::Ray,
@@ -45,6 +47,7 @@ impl Sphere {
     }
 }
 
+#[typetag::serde]
 impl hittable::Hittable for Sphere {
     /// Solves the quadratic ray-sphere intersection and returns the nearest valid hit.
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
@@ -92,15 +95,5 @@ impl hittable::Hittable for Sphere {
             self.center.point_at(1.0) + radius_vec,
         );
         t0_bb.union(&t1_bb)
-    }
-}
-
-impl hittable::Hittable for &Sphere {
-    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
-        (**self).hit(ray, t_min, t_max)
-    }
-
-    fn bounding_box(&self) -> crate::core::bbox::BBox {
-        (**self).bounding_box()
     }
 }

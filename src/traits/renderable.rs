@@ -1,9 +1,12 @@
 //! Glue trait combining geometry (hittable) and material sampling.
+use serde::{Deserialize, Serialize};
+
 use crate::core::{bbox, interval, ray, scene, vec};
 use crate::traits::hittable;
 use crate::traits::sampleable;
 
 /// Trait for objects that can be rendered in the scene.
+#[typetag::serde(tag = "renderable")]
 pub trait Renderable {
     /// Determines if a ray hits the renderable object within the given t range.
     /// Returns [`hittable::HitRecord`] Some(HitRecord) if there is a hit, otherwise None.
@@ -36,6 +39,7 @@ pub trait Renderable {
 /// # Fields
 /// [`hittable::Hittable`] hittable - The hittable component of the renderable.
 /// [`sampleable::Sampleable`] sampleable - The sampleable component of the renderable.
+#[derive(Serialize, Deserialize)]
 pub struct RenderableImpl {
     /// Geometry that can be intersected.
     pub hittable: Box<dyn hittable::Hittable>,
@@ -43,6 +47,7 @@ pub struct RenderableImpl {
     pub sampleable: Box<dyn sampleable::Sampleable>,
 }
 
+#[typetag::serde]
 impl Renderable for RenderableImpl {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         let maybe_hit = self.hittable.hit(ray, t_min, t_max);
@@ -75,8 +80,11 @@ impl Renderable for RenderableImpl {
 }
 
 /// A collection of renderable objects.
+#[derive(Serialize, Deserialize)]
 pub struct RenderableList {
     pub objects: Vec<Box<dyn Renderable>>,
+
+    #[serde(skip)]
     pub bbox: bbox::BBox,
 }
 

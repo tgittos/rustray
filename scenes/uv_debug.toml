@@ -1,92 +1,136 @@
-[render]
 width = 400
-aspect_ratio = 1.7777777910232544
 samples = 100
 depth = 50
 
 [camera]
-origin = [
-    13.0,
-    2.0,
-    3.0,
-]
-look_at = [
-    0.0,
-    0.0,
-    0.0,
-]
-up = [
-    0.0,
-    1.0,
-    0.0,
-]
-aspect_ratio = 1.7777777910232544
-viewport_height = 2.0
 focal_length = 10.0
 aperture = 0.0
 vertical_fov = 20.0
+aspect_ratio = 1.7777777910232544
 
-[[objects]]
-type = "skybox"
-top_color = [
-    0.5,
-    0.699999988079071,
-    1.0,
-]
-bottom_color = [
-    1.0,
-    1.0,
-    1.0,
-]
+[camera.origin]
+x = 13.0
+y = 2.0
+z = 3.0
 
-[[objects]]
-type = "sphere"
-center = [
-    0.0,
-    -10.0,
-    0.0,
-]
+[camera.lower_left_corner]
+x = 2.913601875305176
+y = -1.2262840270996094
+z = 3.8894572257995605
+
+[camera.horizontal]
+x = 1.409735083580017
+y = 0.0
+z = -6.108851432800293
+
+[camera.vertical]
+x = -0.5094205141067505
+y = 3.4875707626342773
+z = -0.11755857616662979
+
+[camera.up]
+x = 0.0
+y = 1.0
+z = 0.0
+
+[camera.u]
+x = 0.22485950589179993
+y = 0.0
+z = -0.9743911623954773
+
+[camera.v]
+x = -0.14445336163043976
+y = 0.9889498949050903
+z = -0.03333539143204689
+
+[camera.w]
+x = 0.9636240601539612
+y = 0.14824986457824707
+z = 0.2223747819662094
+
+[[scene.objects]]
+renderable = "Skybox"
+
+[scene.objects.top_color]
+x = 0.5
+y = 0.699999988079071
+z = 1.0
+
+[scene.objects.bottom_color]
+x = 1.0
+y = 1.0
+z = 1.0
+
+[[scene.objects]]
+renderable = "RenderableImpl"
+
+[scene.objects.hittable]
+hittable = "Sphere"
 radius = 10.0
 
-[objects.material]
-type = "lambertian"
+[scene.objects.hittable.center]
+time = 0.0
 
-[objects.material.texture]
-type = "checker"
-color1 = [
-    0.2,
-    0.3,
-    0.1,
-]
-color2 = [
-    0.9,
-    0.9,
-    0.9,
-]
-scale = 0.31
+[scene.objects.hittable.center.origin]
+x = 0.0
+y = -10.0
+z = 0.0
 
-[[objects]]
-type = "sphere"
-center = [
-    0.0,
-    10.0,
-    0.0,
-]
+[scene.objects.hittable.center.direction]
+x = 0.0
+y = 0.0
+z = 0.0
+
+[scene.objects.sampleable]
+sampleable = "Lambertian"
+
+[scene.objects.sampleable.texture]
+texturable = "CheckerTexture"
+inv_scale = 3.225806474685669
+
+[scene.objects.sampleable.texture.color1.albedo]
+x = 0.20000000298023224
+y = 0.30000001192092896
+z = 0.10000000149011612
+
+[scene.objects.sampleable.texture.color2.albedo]
+x = 0.8999999761581421
+y = 0.8999999761581421
+z = 0.8999999761581421
+
+[[scene.objects]]
+renderable = "RenderableImpl"
+
+[scene.objects.hittable]
+hittable = "Sphere"
 radius = 10.0
 
-[objects.material]
-type = "lambertian"
+[scene.objects.hittable.center]
+time = 0.0
 
-[objects.material.texture]
-type = "checker"
-color1 = [
-    0.2,
-    0.3,
-    0.1,
-]
-color2 = [
-    0.9,
-    0.9,
-    0.9,
-]
-scale = 0.31
+[scene.objects.hittable.center.origin]
+x = 0.0
+y = 10.0
+z = 0.0
+
+[scene.objects.hittable.center.direction]
+x = 0.0
+y = 0.0
+z = 0.0
+
+[scene.objects.sampleable]
+sampleable = "Lambertian"
+
+[scene.objects.sampleable.texture]
+texturable = "CheckerTexture"
+inv_scale = 3.225806474685669
+
+[scene.objects.sampleable.texture.color1.albedo]
+x = 0.20000000298023224
+y = 0.30000001192092896
+z = 0.10000000149011612
+
+[scene.objects.sampleable.texture.color2.albedo]
+x = 0.8999999761581421
+y = 0.8999999761581421
+z = 0.8999999761581421

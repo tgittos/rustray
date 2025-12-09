@@ -1,6 +1,7 @@
 /// Represents a one-dimensional interval [min, max].
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub struct Interval {
     pub min: f32,
     pub max: f32,

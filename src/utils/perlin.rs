@@ -4,6 +4,7 @@ use crate::core::vec;
 
 const POINT_COUNT: usize = 256;
 
+#[derive(Default)]
 pub struct PerlinGenerator {
     rand_vectors: Vec<vec::Vec3>,
     perm_x: Vec<usize>,

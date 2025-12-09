@@ -1,5 +1,5 @@
 //! Bounding Volume Hierarchy for accelerating renderable hit tests.
-use crate::core::bbox;
+use crate::core::{bbox, ray};
 use crate::traits::{hittable, renderable};
 
 /// Internal BVH node representation.
@@ -98,17 +98,6 @@ impl BvhNode {
         }
     }
 
-    fn into_renderables(self) -> Vec<Box<dyn renderable::Renderable>> {
-        match self {
-            BvhNode::Leaf { object, .. } => vec![object],
-            BvhNode::Branch { left, right, .. } => {
-                let mut renderables = left.into_renderables();
-                renderables.extend(right.into_renderables());
-                renderables
-            }
-        }
-    }
-
     fn box_compare(
         a: &Box<dyn renderable::Renderable>,
         b: &Box<dyn renderable::Renderable>,
@@ -144,61 +133,7 @@ impl Bvh {
         self.root.bounding_box()
     }
 
-    pub fn into_renderables(self) -> Vec<Box<dyn renderable::Renderable>> {
-        self.root.into_renderables()
-    }
-}
-
-impl renderable::Renderable for Bvh {
-    fn hit(
-        &self,
-        ray: &crate::core::ray::Ray,
-        t_min: f32,
-        t_max: f32,
-    ) -> Option<hittable::HitRecord<'_>> {
+    pub fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         self.root.hit(ray, t_min, t_max)
-    }
-
-    fn bounding_box(&self) -> bbox::BBox {
-        self.root.bounding_box().clone()
-    }
-
-    fn sample(
-        &self,
-        rng: &mut rand::rngs::ThreadRng,
-        hit_record: &hittable::HitRecord<'_>,
-        scene: &crate::core::scene::Scene,
-        depth: u32,
-    ) -> crate::core::vec::Vec3 {
-        // Hit records produced by the BVH always point at the underlying renderable,
-        // so delegate sampling back to it.
-        hit_record.renderable.sample(rng, hit_record, scene, depth)
-    }
-}
-
-impl renderable::Renderable for &Bvh {
-    fn hit(
-        &self,
-        ray: &crate::core::ray::Ray,
-        t_min: f32,
-        t_max: f32,
-    ) -> Option<hittable::HitRecord<'_>> {
-        self.root.hit(ray, t_min, t_max)
-    }
-
-    fn bounding_box(&self) -> bbox::BBox {
-        self.root.bounding_box().clone()
-    }
-
-    fn sample(
-        &self,
-        rng: &mut rand::rngs::ThreadRng,
-        hit_record: &hittable::HitRecord<'_>,
-        scene: &crate::core::scene::Scene,
-        depth: u32,
-    ) -> crate::core::vec::Vec3 {
-        // Hit records produced by the BVH always point at the underlying renderable,
-        // so delegate sampling back to it.
-        hit_record.renderable.sample(rng, hit_record, scene, depth)
     }
 }

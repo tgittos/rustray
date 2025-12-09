@@ -1,7 +1,9 @@
 //! Ray representation used for casting through the scene.
+use serde::{Deserialize, Serialize};
+
 use crate::core::vec;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 /// A half-infinite line defined by an origin and direction, with time parameter.
 pub struct Ray {
     pub origin: vec::Vec3,

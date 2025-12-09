@@ -3,6 +3,7 @@ use crate::core::{scene, vec};
 use crate::traits::hittable;
 
 /// Trait for objects that can be sampled for color contribution.
+#[typetag::serde(tag = "sampleable")]
 pub trait Sampleable {
     /// Samples the color contribution at the hit point.
     fn sample(

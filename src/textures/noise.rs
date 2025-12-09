@@ -1,9 +1,14 @@
+use serde::{Deserialize, Serialize};
+
 use crate::core::vec;
 use crate::traits::texturable;
 use crate::utils::perlin;
 
+#[derive(Serialize)]
 pub struct NoiseTexture {
     scale: f64,
+
+    #[serde(skip)]
     perlin: perlin::PerlinGenerator,
 }
 
@@ -16,6 +21,25 @@ impl NoiseTexture {
     }
 }
 
+impl<'de> Deserialize<'de> for NoiseTexture {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct NoiseTextureData {
+            scale: f64,
+        }
+
+        let data = NoiseTextureData::deserialize(deserializer)?;
+        Ok(Self {
+            scale: data.scale,
+            perlin: perlin::PerlinGenerator::new(&mut rand::rng()),
+        })
+    }
+}
+
+#[typetag::serde]
 impl texturable::Texturable for NoiseTexture {
     fn sample(&self, hit_record: &crate::traits::hittable::Hit) -> vec::Vec3 {
         let scaled_point = hit_record.point * self.scale;

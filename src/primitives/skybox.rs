@@ -1,8 +1,10 @@
 //! Procedural sky gradient that acts as both geometry and material.
+use serde::{Deserialize, Serialize};
+
 use crate::core::{bbox, ray, scene, vec};
 use crate::traits::{hittable, renderable, sampleable};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 /// Background gradient defined by top and bottom colors.
 pub struct Skybox {
     pub top_color: vec::Vec3,
@@ -53,6 +55,7 @@ fn skybox_sample(
     bottom_color * (1.0 - t) + top_color * t
 }
 
+#[typetag::serde]
 impl hittable::Hittable for Skybox {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         skybox_hit(ray, t_min, t_max)
@@ -67,6 +70,7 @@ impl hittable::Hittable for Skybox {
     }
 }
 
+#[typetag::serde]
 impl sampleable::Sampleable for Skybox {
     fn sample(
         &self,
@@ -86,6 +90,7 @@ impl sampleable::Sampleable for Skybox {
     }
 }
 
+#[typetag::serde]
 impl renderable::Renderable for Skybox {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         let maybe_hit = skybox_hit(ray, t_min, t_max);

@@ -1,13 +1,22 @@
+use serde::{Deserialize, Serialize};
+
 use crate::core::{bbox, ray, vec};
 use crate::traits::hittable;
 
+#[derive(Serialize)]
 pub struct Quad {
     pub q: vec::Point3,
     pub u: vec::Vec3,
     pub v: vec::Vec3,
     pub w: vec::Vec3,
+
+    #[serde(skip)]
     bbox: bbox::BBox,
+
+    #[serde(skip)]
     normal: vec::Vec3,
+
+    #[serde(skip)]
     d: f32,
 }
 
@@ -38,6 +47,38 @@ impl Quad {
     }
 }
 
+impl<'de> Deserialize<'de> for Quad {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct QuadData {
+            q: vec::Point3,
+            u: vec::Vec3,
+            v: vec::Vec3,
+        }
+
+        let data = QuadData::deserialize(deserializer)?;
+        let bbox = bbox::BBox::bounding(data.q, data.q + data.u + data.v)
+            .union(&bbox::BBox::bounding(data.q + data.u, data.q + data.v));
+        let normal = data.u.cross(&data.v).normalize();
+        let d = normal.dot(&data.q);
+        let w = normal / normal.dot(&normal);
+
+        Ok(Quad {
+            q: data.q,
+            u: data.u,
+            v: data.v,
+            w,
+            bbox,
+            normal,
+            d,
+        })
+    }
+}
+
+#[typetag::serde]
 impl hittable::Hittable for Quad {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
         let denom = self.normal.dot(&ray.direction);

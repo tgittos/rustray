@@ -1,8 +1,10 @@
 use rand::rngs;
+use serde::{Deserialize, Serialize};
 
 use crate::core::{scene, vec};
 use crate::traits::{hittable, sampleable, texturable};
 
+#[derive(Serialize, Deserialize)]
 pub struct DiffuseLight {
     pub texture: Box<dyn texturable::Texturable>,
 }
@@ -13,6 +15,7 @@ impl DiffuseLight {
     }
 }
 
+#[typetag::serde]
 impl sampleable::Sampleable for DiffuseLight {
     fn sample(
         &self,

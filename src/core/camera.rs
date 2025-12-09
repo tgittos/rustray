@@ -7,7 +7,7 @@ use crate::core::ray;
 use crate::core::vec;
 
 /// Parameters used to build a [`Camera`].
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct CameraConfig {
     /// Camera position.
     pub origin: vec::Vec3,
@@ -27,7 +27,7 @@ pub struct CameraConfig {
     pub vertical_fov: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Ray generator that maps screen coordinates to rays in world space.
 pub struct Camera {
     pub origin: vec::Vec3,
@@ -41,6 +41,7 @@ pub struct Camera {
     pub focal_length: f32,
     pub aperture: f32,
     pub vertical_fov: f32,
+    pub aspect_ratio: f32,
 }
 
 impl Camera {
@@ -79,6 +80,7 @@ impl Camera {
             focal_length: config.focal_length,
             aperture: config.aperture,
             vertical_fov: config.vertical_fov,
+            aspect_ratio: config.aspect_ratio,
             up: config.up,
             u,
             v,

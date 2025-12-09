@@ -20,6 +20,7 @@ pub struct Hit {
 }
 
 /// Trait for objects that can be intersected by rays.
+#[typetag::serde(tag = "hittable")]
 pub trait Hittable {
     /// Determines if a ray hits the object within the given t range.
     /// Bounds intersection tests between t_min and t_max.

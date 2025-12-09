@@ -29,35 +29,27 @@ fn main() {
         std::process::exit(1);
     }
 
-    let (scene, camera, render_settings) =
-        match scene::Scene::load_from_file(scene_path.as_path(), &mut rng) {
-            Ok(result) => result,
-            Err(err) => {
-                eprintln!(
-                    "Failed to load scene from {}: {}",
-                    scene_path.display(),
-                    err
-                );
-                std::process::exit(1);
-            }
-        };
-    let ar = render_settings.aspect_ratio();
-    let ny = (render_settings.width as f32 / ar) as u32;
+    let render = match scene::load_from_file(&mut rng, scene_path.as_path()) {
+        Ok(result) => result,
+        Err(err) => {
+            eprintln!(
+                "Failed to load scene from {}: {}",
+                scene_path.display(),
+                err
+            );
+            std::process::exit(1);
+        }
+    };
 
     println!(
         "Rendering a {}x{} image with {} samples per pixel and max depth {}",
-        render_settings.width, ny, render_settings.samples, render_settings.max_depth
+        render.width,
+        render.width as f32 * render.camera.aspect_ratio,
+        render.samples,
+        render.depth
     );
 
-    let data = raytrace(
-        &mut rng,
-        render_settings.width,
-        render_settings.aspect_ratio(),
-        &camera,
-        &scene,
-        Some(render_settings.samples),
-        Some(render_settings.max_depth),
-    );
+    let data = raytrace(&mut rng, &render);
 
     let filename = scene_path
         .file_stem()
@@ -67,8 +59,8 @@ fn main() {
     match image::save_buffer(
         &Path::new(&format!("samples/{}.png", filename)),
         data.as_slice(),
-        render_settings.width,
-        ny,
+        render.width,
+        (render.width as f32 / render.camera.aspect_ratio) as u32,
         image::ColorType::Rgb8,
     ) {
         Ok(_) => println!("Image saved to samples/{}.png", filename),

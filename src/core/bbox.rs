@@ -3,7 +3,7 @@ use std::mem;
 
 use crate::core::{interval, ray, vec};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct BBox {
     pub x: interval::Interval,
     pub y: interval::Interval,

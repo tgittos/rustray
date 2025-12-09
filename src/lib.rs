@@ -13,7 +13,7 @@ use rand::Rng;
 use std::time;
 //use std::thread::available_parallelism;
 
-use crate::core::{camera, scene, vec};
+use crate::core::{render, vec};
 use crate::traits::renderable::Renderable;
 use crate::utils::stats;
 
@@ -29,39 +29,31 @@ use crate::utils::stats;
 ///
 /// # Returns
 /// A flat RGB buffer in row-major order with gamma correction applied.
-pub fn raytrace(
-    rng: &mut rand::rngs::ThreadRng,
-    width: u32,
-    aspect_ratio: f32,
-    camera: &camera::Camera,
-    scene: &scene::Scene,
-    ns: Option<u32>,
-    max_depth: Option<u32>,
-) -> Vec<u8> {
-    let height = (width as f32 / aspect_ratio) as u32;
-    let ns = ns.unwrap_or(50);
-    let max_depth = max_depth.unwrap_or(8);
+pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec<u8> {
+    let height = (render.width as f32 / render.camera.aspect_ratio) as u32;
+    let ns = render.samples;
+    let max_depth = render.depth;
 
     let pixel_cols = (0..height)
         .into_iter()
         .map(|y| {
-            (0..width)
+            (0..render.width)
                 .into_iter()
                 .map(|x| {
                     let mut col = vec::Vec3::new(0.0, 0.0, 0.0);
 
                     for _s in 0..ns {
-                        let u = (x as f32 + rng.random::<f32>()) / width as f32;
+                        let u = (x as f32 + rng.random::<f32>()) / render.width as f32;
                         let v = (y as f32 + rng.random::<f32>()) / height as f32;
 
-                        let r = camera.get_ray(rng, u, v);
+                        let r = render.camera.get_ray(rng, u, v);
 
                         let hit_start = time::Instant::now();
-                        if let Some(hit) = scene.hit(&r, 0.001, f32::MAX) {
+                        if let Some(hit) = render.scene.hit(&r, 0.001, f32::MAX) {
                             stats::add_hit_stat(stats::Stat::new("scene_hit", hit_start.elapsed()));
 
                             let sample_start = time::Instant::now();
-                            col = col + hit.renderable.sample(rng, &hit, &scene, max_depth);
+                            col = col + hit.renderable.sample(rng, &hit, &render.scene, max_depth);
                             stats::add_sample_stat(stats::Stat::new(
                                 "material_sample",
                                 sample_start.elapsed(),

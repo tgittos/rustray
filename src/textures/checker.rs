@@ -1,7 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use crate::core::vec;
 use crate::textures::color;
 use crate::traits::{hittable, texturable};
 
+#[derive(Serialize, Deserialize)]
 pub struct CheckerTexture {
     pub color1: color::ColorTexture,
     pub color2: color::ColorTexture,
@@ -18,6 +21,7 @@ impl CheckerTexture {
     }
 }
 
+#[typetag::serde]
 impl texturable::Texturable for CheckerTexture {
     fn sample(&self, hit: &hittable::Hit) -> vec::Vec3 {
         // Use world-space position so large spheres (like the ground) don't collapse to bands near the poles.

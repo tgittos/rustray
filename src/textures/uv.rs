@@ -1,9 +1,12 @@
 extern crate image;
 
+use serde::{Deserialize, Serialize};
+
 use crate::core::{interval, vec};
 use crate::traits::hittable;
 use crate::traits::texturable;
 
+#[derive(Serialize, Deserialize)]
 pub struct UvTexture {
     data: Vec<u8>,
     width: u32,
@@ -24,6 +27,7 @@ impl UvTexture {
     }
 }
 
+#[typetag::serde]
 impl texturable::Texturable for UvTexture {
     fn sample(&self, hit: &hittable::Hit) -> vec::Vec3 {
         let u = interval::Interval::new(0.0, 1.0).clamp(hit.u);
