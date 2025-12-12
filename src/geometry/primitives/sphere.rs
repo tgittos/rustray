@@ -1,0 +1,71 @@
+//! Basic sphere geometry implementing the `Hittable` trait.
+use serde::{Deserialize, Serialize};
+
+use crate::core::{bbox, ray};
+use crate::math::vec;
+use crate::traits::hittable;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Sphere positioned at `center` with a `radius`.
+pub struct Sphere {
+    pub center: vec::Vec3,
+    pub radius: f32,
+}
+
+impl Sphere {
+    /// Creates a new sphere; a negative radius flips the surface normal (useful for hollow spheres).
+    pub fn new(center: &vec::Vec3, radius: f32) -> Self {
+        Self {
+            center: *center,
+            radius,
+        }
+    }
+
+    fn get_uv(p_unit: &vec::Vec3) -> (f32, f32) {
+        // p_unit is expected to be the unit normal pointing outward from the sphere.
+        let theta = (-p_unit.y).acos();
+        let phi = -p_unit.z.atan2(p_unit.x) + std::f32::consts::PI;
+        let u = phi / (2.0 * std::f32::consts::PI);
+        let v = theta / std::f32::consts::PI;
+        (u, v)
+    }
+}
+
+impl hittable::Hittable for Sphere {
+    /// Solves the quadratic ray-sphere intersection and returns the nearest valid hit.
+    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::Hit> {
+        let oc = ray.origin - self.center;
+        let a = ray.direction.dot(&ray.direction);
+        let b = oc.dot(&ray.direction);
+        let c = oc.dot(&oc) - self.radius * self.radius;
+        let discriminant = b * b - a * c;
+        if discriminant > 0.0 {
+            for &sign in &[-1.0, 1.0] {
+                let temp = (-b + sign * discriminant.sqrt()) / a;
+                if temp < t_max && temp > t_min {
+                    let point = ray.point_at(temp);
+                    let normal = (point - self.center) / self.radius;
+                    let (u, v) = Sphere::get_uv(&normal);
+                    return Some(hittable::Hit {
+                        ray: ray.clone(),
+                        t: temp,
+                        point,
+                        normal,
+                        u,
+                        v,
+                    });
+                }
+            }
+        }
+        None
+    }
+
+    fn bounding_box(&self) -> bbox::BBox {
+        let radius_vec = vec::Vec3::new(self.radius, self.radius, self.radius);
+        bbox::BBox::bounding(self.center - radius_vec, self.center + radius_vec)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}

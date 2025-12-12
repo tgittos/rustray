@@ -1,10 +1,12 @@
 //! Traits for materials that can produce color contributions from ray hits.
-use crate::core::{scene, vec};
+use std::any::Any;
+
+use crate::core::scene;
+use crate::math::vec;
 use crate::traits::hittable;
 
 /// Trait for objects that can be sampled for color contribution.
-#[typetag::serde(tag = "sampleable")]
-pub trait Sampleable {
+pub trait Sampleable: Any {
     /// Samples the color contribution at the hit point.
     fn sample(
         &self,
@@ -13,4 +15,6 @@ pub trait Sampleable {
         scene: &scene::Scene,
         depth: u32,
     ) -> vec::Vec3;
+
+    fn as_any(&self) -> &dyn Any;
 }

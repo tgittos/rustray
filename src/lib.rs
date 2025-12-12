@@ -3,19 +3,20 @@
 //! Provides core components for ray tracing, including vectors, rays, cameras, scenes,
 //! primitives, materials, and rendering functionality.
 pub mod core;
+pub mod geometry;
 pub mod materials;
-pub mod primitives;
+pub mod math;
+pub mod stats;
 pub mod textures;
 pub mod traits;
-pub mod utils;
 
 use rand::Rng;
 use std::time;
 //use std::thread::available_parallelism;
 
-use crate::core::{render, vec};
+use crate::core::render;
+use crate::math::vec;
 use crate::traits::renderable::Renderable;
-use crate::utils::stats;
 
 /// Renders the given scene to an RGB buffer using stochastic sampling.
 ///

@@ -2,8 +2,9 @@
 pub mod bbox;
 pub mod bvh;
 pub mod camera;
-pub mod interval;
+pub mod object;
 pub mod ray;
 pub mod render;
 pub mod scene;
-pub mod vec;
+pub mod scene_file;
+pub mod world;

@@ -1,8 +1,11 @@
-use crate::core::vec;
+use std::any::Any;
+
+use crate::math::vec;
 use crate::traits::hittable;
 
-#[typetag::serde(tag = "texturable")]
-pub trait Texturable {
+pub trait Texturable: Any {
     /// Returns the texture color value at the given coordinates and point.
     fn sample(&self, hit_record: &hittable::Hit) -> vec::Vec3;
+
+    fn as_any(&self) -> &dyn Any;
 }

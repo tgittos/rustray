@@ -1,10 +1,11 @@
 use rand::rngs;
-use serde::{Deserialize, Serialize};
+use std::time;
 
-use crate::core::{scene, vec};
+use crate::core::scene;
+use crate::math::vec;
 use crate::traits::{hittable, sampleable, texturable};
+use crate::stats;
 
-#[derive(Serialize, Deserialize)]
 pub struct DiffuseLight {
     pub texture: Box<dyn texturable::Texturable>,
 }
@@ -15,7 +16,6 @@ impl DiffuseLight {
     }
 }
 
-#[typetag::serde]
 impl sampleable::Sampleable for DiffuseLight {
     fn sample(
         &self,
@@ -24,6 +24,16 @@ impl sampleable::Sampleable for DiffuseLight {
         _scene: &scene::Scene,
         _depth: u32,
     ) -> vec::Vec3 {
-        self.texture.sample(&hit_record.hit)
+        let sample_start = time::Instant::now();
+        let result = self.texture.sample(&hit_record.hit);
+        stats::add_sample_stat(stats::Stat::new(
+            stats::DIFFUSE_LIGHT_SAMPLE,
+            sample_start.elapsed(),
+        ));
+        result
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

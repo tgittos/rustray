@@ -3,14 +3,15 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time;
 
-use crate::core::{ray, scene, vec};
+use crate::core::{ray, scene};
+use crate::math::vec;
+use crate::stats;
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable::Sampleable;
-use crate::utils::stats;
 
 /// Glass-like dielectric material with a configurable refractive index.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Dielectric {
     pub refractive_index: f32,
 }
@@ -22,7 +23,6 @@ impl Dielectric {
     }
 }
 
-#[typetag::serde]
 impl Sampleable for Dielectric {
     fn sample(
         &self,
@@ -90,5 +90,9 @@ impl Sampleable for Dielectric {
         } else {
             vec::Vec3::new(0.0, 0.0, 0.0)
         }
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

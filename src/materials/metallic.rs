@@ -2,14 +2,15 @@
 use serde::{Deserialize, Serialize};
 use std::time;
 
-use crate::core::{ray, scene, vec};
+use crate::core::{ray, scene};
+use crate::math::vec;
+use crate::stats;
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable;
-use crate::utils::stats;
 
 /// Mirror-like surface with an albedo tint and surface roughness.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Metallic {
     pub albedo: vec::Vec3,
     pub roughness: f32,
@@ -25,7 +26,6 @@ impl Metallic {
     }
 }
 
-#[typetag::serde]
 impl sampleable::Sampleable for Metallic {
     /// Samples a specular reflection with optional fuzziness.
     fn sample(
@@ -71,5 +71,9 @@ impl sampleable::Sampleable for Metallic {
         ));
 
         return self.albedo * bounce;
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

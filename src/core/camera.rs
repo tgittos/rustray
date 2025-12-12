@@ -4,7 +4,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::ray;
-use crate::core::vec;
+use crate::math::vec;
 
 /// Parameters used to build a [`Camera`].
 #[derive(Debug, Clone, Copy)]

@@ -6,7 +6,7 @@ use crate::traits::{hittable, renderable};
 pub enum BvhNode {
     Leaf {
         bounding_box: bbox::BBox,
-        object: Box<dyn renderable::Renderable>,
+        index: usize,
     },
     Branch {
         bounding_box: bbox::BBox,
@@ -18,36 +18,37 @@ pub enum BvhNode {
 impl BvhNode {
     fn new(
         rng: &mut rand::rngs::ThreadRng,
-        mut renderables: Vec<Box<dyn renderable::Renderable>>,
+        objects: &[Box<dyn renderable::Renderable>],
+        mut indices: Vec<usize>,
     ) -> Self {
         assert!(
-            !renderables.is_empty(),
+            !indices.is_empty(),
             "BVH cannot be built without renderables"
         );
 
-        if renderables.len() == 1 {
-            let object = renderables.pop().unwrap();
-            let bounding_box = object.bounding_box();
+        if indices.len() == 1 {
+            let index = indices.pop().unwrap();
+            let bounding_box = objects[index].bounding_box();
             return BvhNode::Leaf {
                 bounding_box,
-                object,
+                index,
             };
         }
 
-        let bbox = renderables
+        let bbox = indices
             .iter()
-            .map(|obj| obj.bounding_box())
+            .map(|&idx| objects[idx].bounding_box())
             .reduce(|acc, bbox| acc.union(&bbox))
             .unwrap();
 
         let axis = bbox.longest_axis();
-        renderables.sort_by(|a, b| BvhNode::box_compare(a, b, axis));
-        let mid = renderables.len() / 2;
-        let right_renderables = renderables.split_off(mid);
-        let left_renderables = renderables;
+        indices.sort_by(|a, b| BvhNode::box_compare(objects, *a, *b, axis));
+        let mid = indices.len() / 2;
+        let right_indices = indices.split_off(mid);
+        let left_indices = indices;
 
-        let left = Box::new(BvhNode::new(rng, left_renderables));
-        let right = Box::new(BvhNode::new(rng, right_renderables));
+        let left = Box::new(BvhNode::new(rng, objects, left_indices));
+        let right = Box::new(BvhNode::new(rng, objects, right_indices));
         let bounding_box = left.bounding_box().union(right.bounding_box());
 
         BvhNode::Branch {
@@ -57,14 +58,15 @@ impl BvhNode {
         }
     }
 
-    fn hit(
-        &self,
+    fn hit<'a>(
+        &'a self,
+        objects: &'a [Box<dyn renderable::Renderable>],
         ray: &crate::core::ray::Ray,
         t_min: f32,
         t_max: f32,
-    ) -> Option<hittable::HitRecord<'_>> {
+    ) -> Option<hittable::HitRecord<'a>> {
         match self {
-            BvhNode::Leaf { object, .. } => object.hit(ray, t_min, t_max),
+            BvhNode::Leaf { index, .. } => objects[*index].hit(ray, t_min, t_max),
             BvhNode::Branch {
                 bounding_box,
                 left,
@@ -77,12 +79,12 @@ impl BvhNode {
                 let mut closest = t_max;
                 let mut hit_record: Option<hittable::HitRecord> = None;
 
-                if let Some(left_hit) = left.hit(ray, t_min, closest) {
+                if let Some(left_hit) = left.hit(objects, ray, t_min, closest) {
                     closest = left_hit.hit.t;
                     hit_record = Some(left_hit);
                 }
 
-                if let Some(right_hit) = right.hit(ray, t_min, closest) {
+                if let Some(right_hit) = right.hit(objects, ray, t_min, closest) {
                     hit_record = Some(right_hit);
                 }
 
@@ -99,12 +101,13 @@ impl BvhNode {
     }
 
     fn box_compare(
-        a: &Box<dyn renderable::Renderable>,
-        b: &Box<dyn renderable::Renderable>,
+        objects: &[Box<dyn renderable::Renderable>],
+        a: usize,
+        b: usize,
         axis: usize,
     ) -> std::cmp::Ordering {
-        let box_a = a.bounding_box();
-        let box_b = b.bounding_box();
+        let box_a = objects[a].bounding_box();
+        let box_b = objects[b].bounding_box();
 
         box_a
             .axis(axis)
@@ -122,10 +125,11 @@ pub struct Bvh {
 impl Bvh {
     pub fn new(
         rng: &mut rand::rngs::ThreadRng,
-        renderables: Vec<Box<dyn renderable::Renderable>>,
+        objects: &[Box<dyn renderable::Renderable>],
     ) -> Self {
+        let indices = (0..objects.len()).collect::<Vec<_>>();
         Bvh {
-            root: BvhNode::new(rng, renderables),
+            root: BvhNode::new(rng, objects, indices),
         }
     }
 
@@ -133,7 +137,13 @@ impl Bvh {
         self.root.bounding_box()
     }
 
-    pub fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
-        self.root.hit(ray, t_min, t_max)
+    pub fn hit<'a>(
+        &'a self,
+        objects: &'a [Box<dyn renderable::Renderable>],
+        ray: &ray::Ray,
+        t_min: f32,
+        t_max: f32,
+    ) -> Option<hittable::HitRecord<'a>> {
+        self.root.hit(objects, ray, t_min, t_max)
     }
 }

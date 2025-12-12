@@ -1,7 +1,8 @@
 /// An axis-aligned bounding box.
 use std::mem;
 
-use crate::core::{interval, ray, vec};
+use crate::core::ray;
+use crate::math::{interval, vec};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BBox {
@@ -12,7 +13,7 @@ pub struct BBox {
 
 impl BBox {
     pub fn new(x: interval::Interval, y: interval::Interval, z: interval::Interval) -> Self {
-        let inst = BBox { x, y, z };
+        let mut inst = BBox { x, y, z };
         inst.pad_to_min(0.0001);
         inst
     }
@@ -56,15 +57,15 @@ impl BBox {
         }
     }
 
-    pub fn pad_to_min(&self, delta: f32) {
+    pub fn pad_to_min(&mut self, delta: f32) {
         if self.x.length() < delta {
-            self.x.expand(delta);
+            self.x = self.x.expand(delta);
         }
         if self.y.length() < delta {
-            self.y.expand(delta);
+            self.y = self.y.expand(delta);
         }
         if self.z.length() < delta {
-            self.z.expand(delta);
+            self.z = self.z.expand(delta);
         }
     }
 

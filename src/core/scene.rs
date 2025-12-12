@@ -1,17 +1,15 @@
 //! Scene container that stores renderable objects and routes ray intersections.
-use serde::{Deserialize, Serialize};
 use std::{path::Path, time};
 
-use crate::core::{bvh, ray, render, vec};
+use crate::core::{bvh, object, ray, render};
+use crate::math::vec;
+use crate::stats;
 use crate::traits::{hittable, renderable};
-use crate::utils::stats;
 
 /// Collection of renderable objects making up the world.
-#[derive(Serialize)]
 pub struct Scene {
-    pub objects: renderable::RenderableList,
+    pub renderables: object::Renderables,
 
-    #[serde(skip)]
     pub bvh: Option<bvh::Bvh>,
 }
 
@@ -19,45 +17,41 @@ impl Scene {
     /// Creates an empty scene.
     pub fn new() -> Self {
         Scene {
-            objects: renderable::RenderableList::new(),
+            renderables: object::Renderables::new(),
             bvh: None,
         }
     }
-}
 
-impl<'de> Deserialize<'de> for Scene {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let mut scene = Scene {
-            objects: renderable::RenderableList::deserialize(deserializer)?,
-            bvh: None,
-        };
+    /// Adds a renderable object to the scene.
+    pub fn add_object(&mut self, object: Box<dyn renderable::Renderable>) {
+        self.renderables.add(object);
+    }
 
-        let objects = std::mem::take(&mut scene.objects.objects);
-        scene.bvh = Some(bvh::Bvh::new(&mut rand::rng(), objects));
-
-        Ok(scene)
+    pub fn build_bvh(&mut self, rng: &mut rand::rngs::ThreadRng) {
+        if self.renderables.objects.is_empty() {
+            self.bvh = None;
+            return;
+        }
+        self.renderables.rebuild_bbox();
+        self.bvh = Some(bvh::Bvh::new(rng, &self.renderables.objects));
     }
 }
 
-#[typetag::serde]
 impl renderable::Renderable for Scene {
     /// Finds the closest intersection among scene objects.
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         if let Some(bvh) = &self.bvh {
-            return bvh.hit(ray, t_min, t_max);
+            return bvh.hit(&self.renderables.objects, ray, t_min, t_max);
         }
 
         let mut closest_so_far = t_max;
         let mut hit_record: Option<hittable::HitRecord> = None;
 
-        if !self.objects.bbox.hit(ray, t_min, t_max) {
+        if !self.renderables.bbox.hit(ray, t_min, t_max) {
             return None;
         }
 
-        for object in self.objects.objects.iter() {
+        for object in self.renderables.objects.iter() {
             let hit_start = time::Instant::now();
             if let Some(temp_record) = object.hit(ray, t_min, closest_so_far) {
                 stats::add_hit_stat(stats::Stat::new(stats::SCENE_HIT, hit_start.elapsed()));
@@ -75,7 +69,7 @@ impl renderable::Renderable for Scene {
         if let Some(bvh) = &self.bvh {
             bvh.bounding_box().clone()
         } else {
-            self.objects.bbox.clone()
+            self.renderables.bbox.clone()
         }
     }
 
@@ -95,13 +89,15 @@ impl renderable::Renderable for Scene {
         ));
         result
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 pub fn load_from_file(
-    _rng: &mut rand::rngs::ThreadRng,
+    rng: &mut rand::rngs::ThreadRng,
     path: &Path,
 ) -> Result<render::Render, Box<dyn std::error::Error>> {
-    let content = std::fs::read_to_string(path)?;
-    let render = toml::from_str(&content)?;
-    Ok(render)
+    crate::core::scene_file::load_render(rng, path).map_err(|e| e.into())
 }

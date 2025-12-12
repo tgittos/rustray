@@ -1,5 +1,8 @@
 //! Abstractions for geometry that can be intersected by rays.
-use crate::core::{bbox, ray, vec};
+use std::any::Any;
+
+use crate::core::{bbox, ray};
+use crate::math::vec;
 use crate::traits::renderable;
 
 /// Information about a ray-object intersection.
@@ -20,8 +23,7 @@ pub struct Hit {
 }
 
 /// Trait for objects that can be intersected by rays.
-#[typetag::serde(tag = "hittable")]
-pub trait Hittable {
+pub trait Hittable: Any {
     /// Determines if a ray hits the object within the given t range.
     /// Bounds intersection tests between t_min and t_max.
     /// Returns Some([`Hit`]) if there is a hit, otherwise None.
@@ -29,6 +31,8 @@ pub trait Hittable {
 
     /// Returns the bounding box of the object.
     fn bounding_box(&self) -> bbox::BBox;
+
+    fn as_any(&self) -> &dyn Any;
 }
 
 /// A record of a hit, associating the hit information with the renderable object.

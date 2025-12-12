@@ -1,8 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use crate::core::{camera, scene};
 
-#[derive(Serialize, Deserialize)]
 pub struct Render {
     pub width: u32,
     pub samples: u32,

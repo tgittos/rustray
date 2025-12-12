@@ -1,14 +1,13 @@
 //! Lambertian diffuse material that scatters light uniformly.
-use serde::{Deserialize, Serialize};
 use std::time;
 
-use crate::core::{ray, scene, vec};
+use crate::core::{ray, scene};
+use crate::math::vec;
+use crate::stats;
 use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, sampleable, texturable};
-use crate::utils::stats;
 
 /// Diffuse surface with a constant albedo.
-#[derive(Serialize, Deserialize)]
 pub struct Lambertian {
     pub texture: Box<dyn texturable::Texturable>,
 }
@@ -20,7 +19,6 @@ impl Lambertian {
     }
 }
 
-#[typetag::serde]
 impl sampleable::Sampleable for Lambertian {
     /// Samples a diffuse bounce using cosine-weighted hemisphere sampling.
     fn sample(
@@ -55,5 +53,9 @@ impl sampleable::Sampleable for Lambertian {
 
         // miss
         vec::Vec3::new(0.0, 0.0, 0.0)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
