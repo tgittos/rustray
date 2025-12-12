@@ -34,6 +34,8 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
     let height = (render.width as f32 / render.camera.aspect_ratio) as u32;
     let ns = render.samples;
     let max_depth = render.depth;
+    stats::reset();
+    let render_start = time::Instant::now();
 
     let pixel_cols = (0..height)
         .into_iter()
@@ -51,14 +53,12 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
 
                         let hit_start = time::Instant::now();
                         if let Some(hit) = render.scene.hit(&r, 0.001, f32::MAX) {
-                            stats::add_hit_stat(stats::Stat::new("scene_hit", hit_start.elapsed()));
-
-                            let sample_start = time::Instant::now();
-                            col = col + hit.renderable.sample(rng, &hit, &render.scene, max_depth);
-                            stats::add_sample_stat(stats::Stat::new(
-                                "material_sample",
-                                sample_start.elapsed(),
+                            stats::add_hit_stat(stats::Stat::new(
+                                stats::SCENE_HIT,
+                                hit_start.elapsed(),
                             ));
+
+                            col = col + hit.renderable.sample(rng, &hit, &render.scene, max_depth);
                         }
                     }
 
@@ -86,6 +86,7 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
         })
         .collect::<Vec<u8>>();
 
+    let wall_time = render_start.elapsed();
     let stats = stats::get_stats();
 
     println!("Rendering Stats:");
@@ -94,13 +95,13 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
     println!("Total Samples: {}", stats.total_samples());
     vec![
         stats::SCENE_HIT,
-        stats::SCENE_SAMPLE,
         stats::LAMBERTIAN_HIT,
         stats::LAMBERTIAN_SAMPLE,
         stats::METALLIC_HIT,
         stats::METALLIC_SAMPLE,
         stats::DIELECTRIC_HIT,
         stats::DIELECTRIC_SAMPLE,
+        stats::DIFFUSE_LIGHT_SAMPLE,
     ]
     .iter()
     .for_each(|stat_name| {
@@ -121,10 +122,7 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
         format_duration(stats.total_sample_time())
     );
     println!("--------------------------");
-    println!(
-        "Overall Total Time: {}",
-        format_duration(stats.total_time())
-    );
+    println!("Render Wall Time: {}", format_duration(wall_time));
     println!("--------------------------");
 
     image_data

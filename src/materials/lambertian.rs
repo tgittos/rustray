@@ -32,24 +32,34 @@ impl sampleable::Sampleable for Lambertian {
             return vec::Vec3::new(0.0, 0.0, 0.0);
         }
 
+        let sample_start = time::Instant::now();
         let hit = hit_record.hit;
         let target = hit.point + hit.normal + vec::random_in_unit_sphere(rng);
 
         // bounce ray and attenuate
         let new_ray = ray::Ray::new(&hit.point, &(target - hit.point), Some(hit.ray.time));
         let hit_start = time::Instant::now();
-        if let Some(new_hit_record) = scene.hit(&new_ray, 0.001, f32::MAX) {
-            stats::add_hit_stat(stats::Stat::new(stats::LAMBERTIAN_HIT, hit_start.elapsed()));
-            let sample_start = time::Instant::now();
+        let maybe_hit = scene.hit(&new_ray, 0.001, f32::MAX);
+        let hit_elapsed = hit_start.elapsed();
+        stats::add_hit_stat(stats::Stat::new(stats::LAMBERTIAN_HIT, hit_elapsed));
+        if let Some(new_hit_record) = maybe_hit {
+            let bounce_start = time::Instant::now();
             let bounce = new_hit_record
                 .renderable
                 .sample(rng, &new_hit_record, scene, depth - 1);
+            let bounce_elapsed = bounce_start.elapsed();
             stats::add_sample_stat(stats::Stat::new(
                 stats::LAMBERTIAN_SAMPLE,
-                sample_start.elapsed(),
+                sample_start
+                    .elapsed()
+                    .saturating_sub(hit_elapsed + bounce_elapsed),
             ));
             return self.texture.sample(&hit_record.hit) * (0.5 * bounce);
         }
+        stats::add_sample_stat(stats::Stat::new(
+            stats::LAMBERTIAN_SAMPLE,
+            sample_start.elapsed().saturating_sub(hit_elapsed),
+        ));
 
         // miss
         vec::Vec3::new(0.0, 0.0, 0.0)

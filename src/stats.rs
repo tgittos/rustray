@@ -202,6 +202,11 @@ pub static SCENE_SAMPLE: &str = "scene_sample";
 static STATS: sync::LazyLock<sync::Mutex<Stats>> =
     sync::LazyLock::new(|| sync::Mutex::new(Stats::new()));
 
+pub fn reset() {
+    let mut stats = STATS.lock().unwrap();
+    *stats = Stats::new();
+}
+
 pub fn add_hit_stat(stat: Stat) {
     let mut stats = STATS.lock().unwrap();
     stats.add_hit_stat(stat);

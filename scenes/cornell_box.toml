@@ -1,0 +1,183 @@
+width = 600
+samples = 1000
+depth = 100
+
+[camera]
+origin = [278.0, 278.0, -800.0]
+lower_left_corner = [278.3639831542969, 277.6360168457031, -799.0]
+horizontal = [-0.7279404401779175, 0.0, 0.0]
+vertical = [0.0, 0.7279404401779175, 0.0]
+up = [0.0, 1.0, 0.0]
+u = [-1.0, 0.0, 0.0]
+v = [0.0, 1.0, 0.0]
+w = [0.0, 0.0, -1.0]
+focal_length = 1.0
+aperture = 0.0
+vertical_fov = 40.0
+aspect_ratio = 1.0
+
+[[geometries]]
+id = 0
+hittable = "Quad"
+
+[geometries.data]
+q = [0.0, 0.0, 555.0]
+u = [0.0, 0.0, -555.0]
+v = [0.0, 555.0, 0.0]
+w = [1.0, -0.0, 0.0]
+
+[[geometries]]
+id = 1
+hittable = "Quad"
+
+[geometries.data]
+q = [555.0, 0.0, 0.0]
+u = [0.0, 0.0, 555.0]
+v = [0.0, 555.0, 0.0]
+w = [-1.0, 0.0, 0.0]
+
+[[geometries]]
+id = 2
+hittable = "Quad"
+
+[geometries.data]
+q = [0.0, 0.0, 0.0]
+u = [0.0, 0.0, 555.0]
+v = [555.0, 0.0, 0.0]
+w = [0.0, 1.0, 0.0]
+
+[[geometries]]
+id = 3
+hittable = "Quad"
+
+[geometries.data]
+q = [0.0, 555.0, 555.0]
+u = [0.0, 0.0, -555.0]
+v = [555.0, 0.0, 0.0]
+w = [0.0, -1.0, 0.0]
+
+[[geometries]]
+id = 4
+hittable = "Quad"
+
+[geometries.data]
+q = [555.0, 0.0, 555.0]
+u = [-555.0, 0.0, 0.0]
+v = [0.0, 555.0, 0.0]
+w = [0.0, 0.0, -1.0]
+
+[[geometries]]
+id = 5
+hittable = "Quad"
+
+[geometries.data]
+q = [213.0, 554.0, 227.0]
+u = [130.0, 0.0, 0.0]
+v = [0.0, 0.0, 105.0]
+w = [0.0, -1.0, 0.0]
+
+[[geometries]]
+id = 6
+hittable = "Cube"
+
+[geometries.data]
+min = [0.0, 0.0, 0.0]
+max = [165.0, 165.0, 165.0]
+
+[[geometries]]
+id = 7
+hittable = "Cube"
+
+[geometries.data]
+min = [0.0, 0.0, 0.0]
+max = [165.0, 330.0, 165.0]
+
+[[materials]]
+id = 0
+sampleable = "Lambertian"
+
+[materials.data.texture]
+texturable = "Color"
+
+[materials.data.texture.data]
+albedo = [0.11999999731779099, 0.44999998807907104, 0.15000000596046448]
+
+[[materials]]
+id = 1
+sampleable = "Lambertian"
+
+[materials.data.texture]
+texturable = "Color"
+
+[materials.data.texture.data]
+albedo = [0.6499999761581421, 0.05000000074505806, 0.05000000074505806]
+
+[[materials]]
+id = 2
+sampleable = "Lambertian"
+
+[materials.data.texture]
+texturable = "Color"
+
+[materials.data.texture.data]
+albedo = [0.7300000190734863, 0.7300000190734863, 0.7300000190734863]
+
+[[materials]]
+id = 3
+sampleable = "DiffuseLight"
+
+[materials.data.texture]
+texturable = "Color"
+
+[materials.data.texture.data]
+albedo = [15.0, 15.0, 15.0]
+
+[[objects]]
+geometry = 0
+material = 0
+transforms = []
+
+[[objects]]
+geometry = 1
+material = 1
+transforms = []
+
+[[objects]]
+geometry = 2
+material = 2
+transforms = []
+
+[[objects]]
+geometry = 3
+material = 2
+transforms = []
+
+[[objects]]
+geometry = 4
+material = 2
+transforms = []
+
+[[objects]]
+geometry = 5
+material = 3
+transforms = []
+
+[[objects]]
+geometry = 6
+material = 2
+
+[[objects.transforms]]
+Rotate = [[0.9510565400123596, 0.0, -0.30901700258255005], [0.0, 1.0, 0.0], [0.30901700258255005, 0.0, 0.9510565400123596]]
+
+[[objects.transforms]]
+Translate = [130.0, 0.0, 65.0]
+
+[[objects]]
+geometry = 7
+material = 2
+
+[[objects.transforms]]
+Rotate = [[0.9659258127212524, 0.0, 0.258819043636322], [0.0, 1.0, 0.0], [-0.258819043636322, 0.0, 0.9659258127212524]]
+
+[[objects.transforms]]
+Translate = [265.0, 0.0, 295.0]

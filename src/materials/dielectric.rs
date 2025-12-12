@@ -68,26 +68,36 @@ impl Sampleable for Dielectric {
             return vec::Vec3::new(0.0, 0.0, 0.0);
         }
 
+        let sample_start = time::Instant::now();
         let hit_start = time::Instant::now();
-        if let Some(new_hit_record) = scene.hit(
+        let maybe_hit = scene.hit(
             &ray::Ray::new(&hit.point, &scatter_direction, Some(hit.ray.time)),
             0.001,
             f32::MAX,
-        ) {
-            stats::add_hit_stat(stats::Stat::new(stats::DIELECTRIC_HIT, hit_start.elapsed()));
+        );
+        let hit_elapsed = hit_start.elapsed();
+        stats::add_hit_stat(stats::Stat::new(stats::DIELECTRIC_HIT, hit_elapsed));
 
-            let sample_start = time::Instant::now();
+        if let Some(new_hit_record) = maybe_hit {
+            let bounce_start = time::Instant::now();
             let bounce = new_hit_record
                 .renderable
                 .sample(rng, &new_hit_record, scene, depth - 1);
+            let bounce_elapsed = bounce_start.elapsed();
 
             stats::add_sample_stat(stats::Stat::new(
                 stats::DIELECTRIC_SAMPLE,
-                sample_start.elapsed(),
+                sample_start
+                    .elapsed()
+                    .saturating_sub(hit_elapsed + bounce_elapsed),
             ));
 
             attenuation * bounce
         } else {
+            stats::add_sample_stat(stats::Stat::new(
+                stats::DIELECTRIC_SAMPLE,
+                sample_start.elapsed().saturating_sub(hit_elapsed),
+            ));
             vec::Vec3::new(0.0, 0.0, 0.0)
         }
     }

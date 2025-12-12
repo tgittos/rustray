@@ -39,6 +39,7 @@ impl sampleable::Sampleable for Metallic {
             return vec::Vec3::new(0.0, 0.0, 0.0);
         }
 
+        let sample_start = time::Instant::now();
         let hit = hit_record.hit;
         let reflected = vec::reflect(&vec::unit_vector(&hit.ray.direction), &hit.normal);
         let scattered = ray::Ray::new(
@@ -53,21 +54,27 @@ impl sampleable::Sampleable for Metallic {
         if let Some(record) = scene.hit(&scattered, 0.001, f32::MAX) {
             new_hit_record = Some(record);
         }
-        stats::add_hit_stat(stats::Stat::new(stats::METALLIC_HIT, hit_start.elapsed()));
+        let hit_elapsed = hit_start.elapsed();
+        stats::add_hit_stat(stats::Stat::new(stats::METALLIC_HIT, hit_elapsed));
 
-        if new_hit_record.is_none() {
+        let Some(new_hit_record) = new_hit_record else {
+            stats::add_sample_stat(stats::Stat::new(
+                stats::METALLIC_SAMPLE,
+                sample_start.elapsed().saturating_sub(hit_elapsed),
+            ));
             return vec::Vec3::new(0.0, 0.0, 0.0);
-        }
-
-        let new_hit_record = new_hit_record.unwrap();
-        let sample_start = time::Instant::now();
+        };
+        let bounce_start = time::Instant::now();
         let bounce = new_hit_record
             .renderable
             .sample(rng, &new_hit_record, scene, depth - 1);
+        let bounce_elapsed = bounce_start.elapsed();
 
         stats::add_sample_stat(stats::Stat::new(
             stats::METALLIC_SAMPLE,
-            sample_start.elapsed(),
+            sample_start
+                .elapsed()
+                .saturating_sub(hit_elapsed + bounce_elapsed),
         ));
 
         return self.albedo * bounce;

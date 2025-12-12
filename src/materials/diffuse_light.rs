@@ -3,8 +3,8 @@ use std::time;
 
 use crate::core::scene;
 use crate::math::vec;
-use crate::traits::{hittable, sampleable, texturable};
 use crate::stats;
+use crate::traits::{hittable, sampleable, texturable};
 
 pub struct DiffuseLight {
     pub texture: Box<dyn texturable::Texturable>,

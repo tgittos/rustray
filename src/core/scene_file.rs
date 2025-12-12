@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::core::{camera, object, render, scene, world};
 use crate::geometry::{
     instance::GeometryInstance,
-    primitives::{quad, sphere},
+    primitives::{cube, quad, sphere},
     transform,
 };
 use crate::materials::{
@@ -55,6 +55,7 @@ pub struct ObjectInstance {
 pub enum GeometryTemplate {
     Sphere(sphere::Sphere),
     Quad(quad::Quad),
+    Cube(cube::Cube),
     World(world::World),
 }
 
@@ -293,6 +294,9 @@ impl GeometryTemplate {
         if let Some(quad) = hittable.as_any().downcast_ref::<quad::Quad>() {
             return Ok(GeometryTemplate::Quad(quad.clone()));
         }
+        if let Some(cube) = hittable.as_any().downcast_ref::<cube::Cube>() {
+            return Ok(GeometryTemplate::Cube(cube.clone()));
+        }
         if let Some(world) = hittable.as_any().downcast_ref::<world::World>() {
             return Ok(GeometryTemplate::World(*world));
         }
@@ -309,6 +313,9 @@ impl GeometryTemplate {
             }
             GeometryTemplate::Quad(quad) => {
                 std::sync::Arc::new(quad.clone()) as std::sync::Arc<dyn hittable::Hittable>
+            }
+            GeometryTemplate::Cube(cube) => {
+                std::sync::Arc::new(cube.clone()) as std::sync::Arc<dyn hittable::Hittable>
             }
             GeometryTemplate::World(world) => {
                 std::sync::Arc::new(*world) as std::sync::Arc<dyn hittable::Hittable>
