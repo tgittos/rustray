@@ -1,4 +1,3 @@
-use rand::Rng;
 use std::{f32::consts::PI, path::Path, sync::Arc};
 
 use rustray::core::{camera, object, render, scene, scene_file};

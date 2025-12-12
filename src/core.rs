@@ -7,4 +7,5 @@ pub mod ray;
 pub mod render;
 pub mod scene;
 pub mod scene_file;
+pub mod volume;
 pub mod world;

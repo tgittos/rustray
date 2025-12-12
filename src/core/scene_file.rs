@@ -3,7 +3,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::{camera, object, render, scene, world};
+use crate::core::{camera, object, render, scene, volume, world};
 use crate::geometry::{
     instance::GeometryInstance,
     primitives::{cube, quad, sphere},
@@ -25,6 +25,8 @@ pub struct SceneFile {
     pub geometries: Vec<GeometryEntry>,
     pub materials: Vec<MaterialEntry>,
     pub objects: Vec<ObjectInstance>,
+    #[serde(default)]
+    pub volumes: Vec<VolumeInstance>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -51,6 +53,15 @@ pub struct ObjectInstance {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct VolumeInstance {
+    pub boundary_geometry: usize,
+    pub phase_function: usize,
+    pub density: f32,
+    #[serde(default)]
+    pub boundary_transforms: Vec<transform::Transform>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "hittable", content = "data")]
 pub enum GeometryTemplate {
     Sphere(sphere::Sphere),
@@ -66,6 +77,7 @@ pub enum MaterialTemplate {
     Metallic(metallic::Metallic),
     Dielectric(dielectric::Dielectric),
     DiffuseLight { texture: TextureTemplate },
+    Isotropic { texture: TextureTemplate },
     World(world::World),
 }
 
@@ -139,26 +151,52 @@ impl SceneFile {
     pub fn from_render(render: &render::Render) -> Result<Self, SceneFileError> {
         let mut builder = RegistryBuilder::default();
         let mut objects: Vec<ObjectInstance> = Vec::new();
+        let mut volumes: Vec<VolumeInstance> = Vec::new();
 
         for renderable in render.scene.renderables.objects.iter() {
-            let Some(render_object) = renderable.as_any().downcast_ref::<object::RenderObject>()
-            else {
-                return Err(SceneFileError::UnsupportedRenderable(
-                    "non-RenderObject renderable".to_string(),
-                ));
-            };
+            if let Some(render_object) = renderable.as_any().downcast_ref::<object::RenderObject>()
+            {
+                let geometry_id =
+                    builder.register_geometry(&render_object.geometry_instance.ref_obj)?;
+                let material_id =
+                    builder.register_material(&render_object.material_instance.ref_mat)?;
 
-            let geometry_id =
-                builder.register_geometry(&render_object.geometry_instance.ref_obj)?;
-            let material_id =
-                builder.register_material(&render_object.material_instance.ref_mat)?;
+                objects.push(ObjectInstance {
+                    geometry: geometry_id,
+                    material: material_id,
+                    transforms: render_object.geometry_instance.transforms.clone(),
+                    albedo: render_object.material_instance.albedo,
+                });
+                continue;
+            }
 
-            objects.push(ObjectInstance {
-                geometry: geometry_id,
-                material: material_id,
-                transforms: render_object.geometry_instance.transforms.clone(),
-                albedo: render_object.material_instance.albedo,
-            });
+            if let Some(render_volume) = renderable.as_any().downcast_ref::<volume::RenderVolume>()
+            {
+                let boundary = render_volume
+                    .boundary
+                    .as_any()
+                    .downcast_ref::<GeometryInstance>()
+                    .ok_or_else(|| {
+                        SceneFileError::UnsupportedRenderable(
+                            "RenderVolume boundary must be GeometryInstance".to_string(),
+                        )
+                    })?;
+
+                let geometry_id = builder.register_geometry(&boundary.ref_obj)?;
+                let phase_function_id = builder.register_material(&render_volume.phase_function)?;
+
+                volumes.push(VolumeInstance {
+                    boundary_geometry: geometry_id,
+                    phase_function: phase_function_id,
+                    density: render_volume.density,
+                    boundary_transforms: boundary.transforms.clone(),
+                });
+                continue;
+            }
+
+            return Err(SceneFileError::UnsupportedRenderable(
+                "unknown renderable type".to_string(),
+            ));
         }
 
         Ok(SceneFile {
@@ -169,6 +207,7 @@ impl SceneFile {
             geometries: builder.geometries,
             materials: builder.materials,
             objects,
+            volumes,
         })
     }
 
@@ -209,6 +248,25 @@ impl SceneFile {
                 geometry_instance,
                 material_instance,
             }));
+        }
+        for volume in self.volumes.into_iter() {
+            let Some(geometry) = geometries.get(volume.boundary_geometry) else {
+                return Err(SceneFileError::MissingGeometry(volume.boundary_geometry));
+            };
+            let Some(phase_function) = materials.get(volume.phase_function) else {
+                return Err(SceneFileError::MissingMaterial(volume.phase_function));
+            };
+
+            let boundary = GeometryInstance {
+                ref_obj: geometry.clone(),
+                transforms: volume.boundary_transforms,
+            };
+
+            scene.add_object(Box::new(volume::RenderVolume::new(
+                Box::new(boundary),
+                volume.density,
+                phase_function.clone(),
+            )));
         }
         scene.build_bvh(rng);
 
@@ -333,6 +391,11 @@ impl MaterialTemplate {
                 texture: TextureTemplate::from_texturable(lambert.texture.as_ref())?,
             });
         }
+        if let Some(isotropic) = material.as_any().downcast_ref::<volume::Isotropic>() {
+            return Ok(MaterialTemplate::Isotropic {
+                texture: TextureTemplate::from_texturable(isotropic.texture.as_ref())?,
+            });
+        }
         if let Some(metal) = material.as_any().downcast_ref::<metallic::Metallic>() {
             return Ok(MaterialTemplate::Metallic(metal.clone()));
         }
@@ -360,6 +423,9 @@ impl MaterialTemplate {
         let material: std::sync::Arc<dyn sampleable::Sampleable> = match self {
             MaterialTemplate::Lambertian { texture } => {
                 std::sync::Arc::new(lambertian::Lambertian::new(texture.to_texturable()?))
+            }
+            MaterialTemplate::Isotropic { texture } => {
+                std::sync::Arc::new(volume::Isotropic::new(texture.to_texturable()?))
             }
             MaterialTemplate::Metallic(metal) => {
                 std::sync::Arc::new(metal.clone()) as std::sync::Arc<dyn sampleable::Sampleable>
