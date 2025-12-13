@@ -1,9 +1,74 @@
 # rustray
 
-A work-in-progress ray tracer written while learning Rust. Scenes are described in TOML and rendered to PNGs in `samples/`.
+A work-in-progress ray tracer following the ["Ray Tracing in One Weekend"](https://raytracing.github.io/) series, written while learning Rust. Scenes are described in TOML and rendered to PNGs in `samples/`.
+
+[samples/next_week_scene.rs](samples/next_week_scene.rs)<br />
+[scenes/next_week_scene.toml](scenes/next_week_scene.toml)
+<details>
+<summary>Render Stats</summary>
+
+```
+Rendering a 800x800 image with 500 samples per pixel and max depth 40
+Rendering Stats:
+--------------------------
+Total Hits: 679579076
+Total Samples: 469923612
+Stat: scene_hit
+  P50: (375ns, 0ns)
+  P90: (666ns, 0ns)
+  P99: (1.25µs, 0ns)
+
+Stat: lambertian_hit
+  P50: (541ns, 0ns)
+  P90: (1.417µs, 0ns)
+  P99: (3.251µs, 0ns)
+
+Stat: lambertian_sample
+  P50: (0ns, 124ns)
+  P90: (0ns, 207ns)
+  P99: (0ns, 418ns)
+
+Stat: metallic_hit
+  P50: (417ns, 0ns)
+  P90: (833ns, 0ns)
+  P99: (1.459µs, 0ns)
+
+Stat: metallic_sample
+  P50: (0ns, 125ns)
+  P90: (0ns, 251ns)
+  P99: (0ns, 459ns)
+
+Stat: dielectric_hit
+  P50: (500ns, 0ns)
+  P90: (792ns, 0ns)
+  P99: (1.459µs, 0ns)
+
+Stat: dielectric_sample
+  P50: (0ns, 124ns)
+  P90: (0ns, 166ns)
+  P99: (0ns, 208ns)
+
+Stat: diffuse_light_sample
+  P50: (0ns, 1ns)
+  P90: (0ns, 42ns)
+  P99: (0ns, 42ns)
+
+Total Hit Time: 0h 6m 51s 918ms
+Total Sample Time: 0h 0m 58s 624ms
+--------------------------
+Render Wall Time: 0h 15m 51s 668ms
+--------------------------
+Image saved.
+```
+</details>
+
+![](samples/next_week_scene.png)
+
+[samples/bouncing_spheres.rs](samples/bouncing_spheres.rs)<br />
+[scenes/bouncing_spheres.toml](scenes/bouncing_spheres.toml)
 
 <details>
-<summary>Stats</summary>
+<summary>Render Stats</summary>
 
 ```
 Rendering a 1200x2133.3333 image with 100 samples per pixel and max depth 50
@@ -62,27 +127,25 @@ Image saved to samples/bouncing_spheres.png
 
 ![](samples/bouncing_spheres.png)
 
+[samples/cornell_box.rs](samples/cornell_box.rs)<br />
+[scenes/cornell_box.toml](scenes/cornell_box.toml)
+
 <details>
-<summary>Stats</summary>
+<summary>Render Stats</summary>
 
 ```
 Rendering a 600x600 image with 1000 samples per pixel and max depth 100
 Rendering Stats:
 --------------------------
-Total Hits: 2233732355
-Total Samples: 1923126604
+Total Hits: 2146598937
+Total Samples: 1848107396
 Stat: scene_hit
   P50: (125ns, 0ns)
   P90: (208ns, 0ns)
-  P99: (209ns, 0ns)
-
-Stat: scene_sample
-  P50: (0ns, 0ns)
-  P90: (0ns, 0ns)
-  P99: (0ns, 0ns)
+  P99: (250ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (167ns, 0ns)
+  P50: (208ns, 0ns)
   P90: (292ns, 0ns)
   P99: (375ns, 0ns)
 
@@ -116,17 +179,16 @@ Stat: diffuse_light_sample
   P90: (0ns, 42ns)
   P99: (0ns, 42ns)
 
-Total Hit Time: 0h 6m 48s 52ms
-Total Sample Time: 0h 3m 53s 448ms
+Total Hit Time: 0h 6m 49s 812ms
+Total Sample Time: 0h 3m 50s 750ms
 --------------------------
-Render Wall Time: 0h 13m 52s 904ms
+Render Wall Time: 0h 13m 52s 956ms
 --------------------------
 Image saved to samples/cornell_box.png
 ```
 </details>
 
 ![](samples/cornell_box.png)
-
 
 ## Quick start
 - Install the Rust toolchain (2024 edition).
