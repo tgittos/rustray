@@ -221,3 +221,9 @@ cargo run --release [path/to/scene.toml]
 - Add geometry by implementing `Hittable` under `src/geometry/` (include a bounding box so BVH culling works).
 - Add materials by implementing `Sampleable` under `src/materials/` and textures via `Texturable` under `src/textures/`.
 - Pair them with `core::object::RenderObject` and add to a `Scene` (or the TOML format) to render new objects.
+
+## Performance
+
+Render times scale exponentially with samples-per-pixel and max depth, with overall render times scaling non-linearly with hit/sample time.
+
+![](profile/profile_bouncing_spheres.png)
