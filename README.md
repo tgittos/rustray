@@ -57,7 +57,7 @@ cargo run --release --bin rustray_profile -- [path/to/scene.toml] [--concurrent]
 
 ### Final scene from "Ray Tracing in One Weekend: The Next Week"
 
-400 boxes, 1,000+ spheres, 1 diffuse light, glass/metal/diffuse/perlin noise/UV mapping materials, movement transformations
+400 boxes, 1,000+ spheres, 1 diffuse light, a low density volume over the entire scene, glass/metal/diffuse/perlin noise/UV mapping materials, movement transformations
 
 [samples/next_week_scene.rs](samples/next_week_scene.rs)<br />
 [scenes/next_week_scene.toml](scenes/next_week_scene.toml)
@@ -65,57 +65,58 @@ cargo run --release --bin rustray_profile -- [path/to/scene.toml] [--concurrent]
 <summary>Render Stats</summary>
 
 ```
-Rendering a 800x800 image with 10000 samples per pixel and max depth 40
+Rendering a 800x800 image with 10000 samples per pixel and max depth 40 using 10 threads
 Rendering Stats:
 --------------------------
-Total Hits: 14040430595
-Total Samples: 9708499866
+Total Hits: 9680576367
+Total Samples: 10178059403
 Stat: scene_hit
-  P50: (375ns, 0ns)
-  P90: (625ns, 0ns)
-  P99: (1.25µs, 0ns)
+  P50: (0ns, 0ns)
+  P90: (0ns, 0ns)
+  P99: (0ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (500ns, 0ns)
-  P90: (1.375µs, 0ns)
-  P99: (3.167µs, 0ns)
+  P50: (750ns, 0ns)
+  P90: (2.251µs, 0ns)
+  P99: (5.127µs, 0ns)
 
 Stat: lambertian_sample
-  P50: (0ns, 124ns)
-  P90: (0ns, 168ns)
-  P99: (0ns, 418ns)
+  P50: (0ns, 167ns)
+  P90: (0ns, 251ns)
+  P99: (0ns, 541ns)
 
 Stat: metallic_hit
-  P50: (417ns, 0ns)
-  P90: (792ns, 0ns)
-  P99: (1.417µs, 0ns)
+  P50: (625ns, 0ns)
+  P90: (1.209µs, 0ns)
+  P99: (2.125µs, 0ns)
 
 Stat: metallic_sample
-  P50: (0ns, 125ns)
-  P90: (0ns, 209ns)
-  P99: (0ns, 458ns)
+  P50: (0ns, 167ns)
+  P90: (0ns, 416ns)
+  P99: (0ns, 624ns)
 
 Stat: dielectric_hit
-  P50: (500ns, 0ns)
-  P90: (791ns, 0ns)
-  P99: (1.417µs, 0ns)
+  P50: (708ns, 0ns)
+  P90: (1.167µs, 0ns)
+  P99: (2.291µs, 0ns)
 
 Stat: dielectric_sample
-  P50: (0ns, 84ns)
-  P90: (0ns, 166ns)
-  P99: (0ns, 168ns)
+  P50: (0ns, 126ns)
+  P90: (0ns, 209ns)
+  P99: (0ns, 417ns)
 
 Stat: diffuse_light_sample
-  P50: (0ns, 1ns)
+  P50: (0ns, 41ns)
   P90: (0ns, 42ns)
   P99: (0ns, 42ns)
 
-Total Hit Time: 2h 18m 20s 14ms
-Total Sample Time: 0h 19m 27s 557ms
+CPU Hit Time (avg over 10 threads): 0h 16m 56s 788ms
+CPU Sample Time (avg over 10 threads): 0h 3m 5s 124ms
+CPU Total Time (avg over 10 threads): 0h 20m 1s 913ms
 --------------------------
-Render Wall Time: 5h 20m 14s 456ms
+Render Wall Time: 1h 48m 37s 818ms
 --------------------------
-Image saved.
+Image saved to samples/next_week_scene.png
 ```
 </details>
 
@@ -132,57 +133,58 @@ Image saved.
 <summary>Render Stats</summary>
 
 ```
-Rendering a 1200x2133.3333 image with 1000 samples per pixel and max depth 50 using 10 threads
+Rendering a 1200x2133.3333 image with 10000 samples per pixel and max depth 50 using 10 threads
 Rendering Stats:
 --------------------------
-Total Hits: 1269646788
-Total Samples: 1269646788
+Total Hits: 13703114194
+Total Samples: 13703114194
 Stat: scene_hit
   P50: (0ns, 0ns)
   P90: (0ns, 0ns)
   P99: (0ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (292ns, 0ns)
-  P90: (458ns, 0ns)
-  P99: (1µs, 0ns)
-
-Stat: lambertian_sample
-  P50: (0ns, 126ns)
-  P90: (0ns, 374ns)
-  P99: (0ns, 583ns)
-
-Stat: metallic_hit
-  P50: (292ns, 0ns)
-  P90: (500ns, 0ns)
-  P99: (1.042µs, 0ns)
-
-Stat: metallic_sample
-  P50: (0ns, 165ns)
-  P90: (0ns, 334ns)
-  P99: (0ns, 583ns)
-
-Stat: dielectric_hit
-  P50: (416ns, 0ns)
-  P90: (666ns, 0ns)
+  P50: (458ns, 0ns)
+  P90: (667ns, 0ns)
   P99: (1.417µs, 0ns)
 
+Stat: lambertian_sample
+  P50: (0ns, 208ns)
+  P90: (0ns, 376ns)
+  P99: (0ns, 958ns)
+
+Stat: metallic_hit
+  P50: (458ns, 0ns)
+  P90: (708ns, 0ns)
+  P99: (1.458µs, 0ns)
+
+Stat: metallic_sample
+  P50: (0ns, 208ns)
+  P90: (0ns, 500ns)
+  P99: (0ns, 1.041µs)
+
+Stat: dielectric_hit
+  P50: (583ns, 0ns)
+  P90: (917ns, 0ns)
+  P99: (1.917µs, 0ns)
+
 Stat: dielectric_sample
-  P50: (0ns, 125ns)
-  P90: (0ns, 168ns)
-  P99: (0ns, 375ns)
+  P50: (0ns, 167ns)
+  P90: (0ns, 376ns)
+  P99: (0ns, 917ns)
 
 Stat: diffuse_light_sample
   P50: (0ns, 0ns)
   P90: (0ns, 0ns)
   P99: (0ns, 0ns)
 
-CPU Hit Time (avg over 10 threads): 0h 0m 44s 30ms
-CPU Sample Time (avg over 10 threads): 0h 0m 22s 498ms
-CPU Total Time (avg over 10 threads): 0h 1m 6s 528ms
+CPU Hit Time (avg over 10 threads): 0h 11m 37s 345ms
+CPU Sample Time (avg over 10 threads): 0h 5m 46s 134ms
+CPU Total Time (avg over 10 threads): 0h 17m 23s 480ms
 --------------------------
-Render Wall Time: 0h 2m 46s 502ms
+Render Wall Time: 0h 41m 48s 149ms
 --------------------------
+Image saved to samples/bouncing_spheres.png
 ```
 </details>
 
@@ -200,22 +202,22 @@ Render Wall Time: 0h 2m 46s 502ms
 Rendering a 600x600 image with 10000 samples per pixel and max depth 100 using 10 threads
 Rendering Stats:
 --------------------------
-Total Hits: 19067882489
-Total Samples: 19231402237
+Total Hits: 20185768690
+Total Samples: 20327866970
 Stat: scene_hit
   P50: (0ns, 0ns)
   P90: (0ns, 0ns)
   P99: (0ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (292ns, 0ns)
-  P90: (459ns, 0ns)
-  P99: (875ns, 0ns)
+  P50: (250ns, 0ns)
+  P90: (458ns, 0ns)
+  P99: (834ns, 0ns)
 
 Stat: lambertian_sample
   P50: (0ns, 168ns)
-  P90: (0ns, 584ns)
-  P99: (0ns, 1.126µs)
+  P90: (0ns, 750ns)
+  P99: (0ns, 1.21µs)
 
 Stat: metallic_hit
   P50: (0ns, 0ns)
@@ -242,11 +244,11 @@ Stat: diffuse_light_sample
   P90: (0ns, 42ns)
   P99: (0ns, 42ns)
 
-CPU Hit Time (avg over 10 threads): 0h 10m 34s 938ms
-CPU Sample Time (avg over 10 threads): 0h 9m 33s 554ms
-CPU Total Time (avg over 10 threads): 0h 20m 8s 492ms
+CPU Hit Time (avg over 10 threads): 0h 9m 59s 907ms
+CPU Sample Time (avg over 10 threads): 0h 11m 12s 170ms
+CPU Total Time (avg over 10 threads): 0h 21m 12s 78ms
 --------------------------
-Render Wall Time: 0h 35m 0s 612ms
+Render Wall Time: 0h 37m 54s 295ms
 --------------------------
 Image saved to samples/cornell_box.png
 ```

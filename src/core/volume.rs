@@ -2,17 +2,33 @@ use rand::Rng;
 use std::sync::Arc;
 
 use crate::core::{bbox, ray, scene};
-use crate::math::vec;
+use crate::math::{pdf, vec};
 use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, renderable, sampleable, texturable};
 
+struct PhaseFunctionPDF;
+impl pdf::PDF for PhaseFunctionPDF {
+    fn sample(
+        &self,
+        _in_ray: &ray::Ray,
+        _hit_record: &hittable::HitRecord,
+        _out_ray: &ray::Ray,
+    ) -> f32 {
+        1.0 / (4.0 * std::f32::consts::PI)
+    }
+}
+
 pub struct Isotropic {
     pub texture: Box<dyn texturable::Texturable + Send + Sync>,
+    pub pdf: Box<dyn pdf::PDF + Send + Sync>,
 }
 
 impl Isotropic {
     pub fn new(texture: Box<dyn texturable::Texturable + Send + Sync>) -> Self {
-        Isotropic { texture }
+        Self {
+            texture,
+            pdf: Box::new(PhaseFunctionPDF {}),
+        }
     }
 }
 

@@ -94,11 +94,11 @@ fn main() {
 
     scene.add_object(Box::new(object::RenderObject {
         geometry_instance: GeometryInstance::new(Arc::new(left_wall)),
-        material_instance: MaterialInstance::new(green.clone()),
+        material_instance: MaterialInstance::new(red.clone()),
     }));
     scene.add_object(Box::new(object::RenderObject {
         geometry_instance: GeometryInstance::new(Arc::new(right_wall)),
-        material_instance: MaterialInstance::new(red.clone()),
+        material_instance: MaterialInstance::new(green.clone()),
     }));
     scene.add_object(Box::new(object::RenderObject {
         geometry_instance: GeometryInstance::new(Arc::new(floor)),

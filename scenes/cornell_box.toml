@@ -1,6 +1,7 @@
 width = 600
 samples = 10000
 depth = 100
+volumes = []
 
 [camera]
 origin = [278.0, 278.0, -800.0]
@@ -100,7 +101,7 @@ sampleable = "Lambertian"
 texturable = "Color"
 
 [materials.data.texture.data]
-albedo = [0.11999999731779099, 0.44999998807907104, 0.15000000596046448]
+albedo = [0.6499999761581421, 0.05000000074505806, 0.05000000074505806]
 
 [[materials]]
 id = 1
@@ -110,7 +111,7 @@ sampleable = "Lambertian"
 texturable = "Color"
 
 [materials.data.texture.data]
-albedo = [0.6499999761581421, 0.05000000074505806, 0.05000000074505806]
+albedo = [0.11999999731779099, 0.44999998807907104, 0.15000000596046448]
 
 [[materials]]
 id = 2

@@ -39,6 +39,9 @@ fn main() {
     }
 
     println!("avg x: {}", sum / (n as f64));
-    println!("total probability: {}", 2.0 * std::f64::consts::PI * (sum / (n as f64)));
+    println!(
+        "total probability: {}",
+        2.0 * std::f64::consts::PI * (sum / (n as f64))
+    );
     println!("x at half total probability: {}", x);
 }
