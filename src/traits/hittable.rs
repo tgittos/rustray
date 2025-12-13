@@ -23,7 +23,7 @@ pub struct Hit {
 }
 
 /// Trait for objects that can be intersected by rays.
-pub trait Hittable: Any {
+pub trait Hittable: Any + Send + Sync {
     /// Determines if a ray hits the object within the given t range.
     /// Bounds intersection tests between t_min and t_max.
     /// Returns Some([`Hit`]) if there is a hit, otherwise None.

@@ -28,8 +28,8 @@ impl RenderObject {
     /// * `hittable` - The hittable object.
     /// * `sampleable` - The sampleable object.
     pub fn new(
-        hittable: Arc<dyn hittable::Hittable>,
-        sampleable: Arc<dyn sampleable::Sampleable>,
+        hittable: Arc<dyn hittable::Hittable + Send + Sync>,
+        sampleable: Arc<dyn sampleable::Sampleable + Send + Sync>,
     ) -> Self {
         let geometry_instance = GeometryInstance {
             ref_obj: hittable,
@@ -83,7 +83,7 @@ impl Renderable for RenderObject {
 
 /// A collection of renderable objects.
 pub struct Renderables {
-    pub objects: Vec<Box<dyn Renderable>>,
+    pub objects: Vec<Box<dyn Renderable + Send + Sync>>,
 
     pub bbox: bbox::BBox,
 }
@@ -110,7 +110,7 @@ impl Renderables {
     }
 
     /// Adds a hittable object to the list.
-    pub fn add(&mut self, object: Box<dyn Renderable>) {
+    pub fn add(&mut self, object: Box<dyn Renderable + Send + Sync>) {
         let object_bbox = object.bounding_box();
         self.bbox = self.bbox.union(&object_bbox);
         self.objects.push(object);

@@ -6,7 +6,7 @@ use crate::math::vec;
 use crate::traits::hittable;
 
 /// Trait for objects that can be sampled for color contribution.
-pub trait Sampleable: Any {
+pub trait Sampleable: Any + Send + Sync {
     /// Samples the color contribution at the hit point.
     fn sample(
         &self,

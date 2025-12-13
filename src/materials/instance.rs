@@ -4,12 +4,12 @@ use crate::math::vec;
 use crate::traits::sampleable::Sampleable;
 
 pub struct MaterialInstance {
-    pub ref_mat: Arc<dyn Sampleable>,
+    pub ref_mat: Arc<dyn Sampleable + Send + Sync>,
     pub albedo: Option<vec::Vec3>,
 }
 
 impl MaterialInstance {
-    pub fn new(mat: Arc<dyn Sampleable>) -> Self {
+    pub fn new(mat: Arc<dyn Sampleable + Send + Sync>) -> Self {
         Self {
             ref_mat: mat,
             albedo: None,

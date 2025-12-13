@@ -10,7 +10,7 @@ use rustray::materials::{diffuse_light, instance::MaterialInstance, lambertian};
 use rustray::math::{mat, vec};
 use rustray::textures::color;
 
-use rustray::raytrace;
+use rustray::{raytrace, raytrace_concurrent};
 
 fn rotation_y(angle_degrees: f32) -> mat::Mat3 {
     let theta = angle_degrees * (PI / 180.0);
@@ -25,9 +25,13 @@ fn rotation_y(angle_degrees: f32) -> mat::Mat3 {
 fn main() {
     let mut rng = rand::rng();
 
+    let mut args = std::env::args();
+    let is_concurrent = args.next().map(|s| s == "--concurrent").unwrap_or(false);
+
     let nx = 600;
     let ar = 1.0;
     let ny = (nx as f32 / ar) as u32;
+    //let ns = 1000;
     let ns = 1000;
     let max_depth = 100;
 
@@ -178,7 +182,11 @@ fn main() {
         render.depth
     );
 
-    let data = raytrace(&mut rng, &render);
+    let data = if is_concurrent {
+        raytrace_concurrent(&render)
+    } else {
+        raytrace(&mut rng, &render)
+    };
 
     match image::save_buffer(
         &Path::new("samples/cornell_box.png"),

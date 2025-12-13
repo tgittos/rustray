@@ -7,11 +7,11 @@ use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, renderable, sampleable, texturable};
 
 pub struct Isotropic {
-    pub texture: Box<dyn texturable::Texturable>,
+    pub texture: Box<dyn texturable::Texturable + Send + Sync>,
 }
 
 impl Isotropic {
-    pub fn new(texture: Box<dyn texturable::Texturable>) -> Self {
+    pub fn new(texture: Box<dyn texturable::Texturable + Send + Sync>) -> Self {
         Isotropic { texture }
     }
 }
@@ -51,16 +51,16 @@ impl sampleable::Sampleable for Isotropic {
 }
 
 pub struct RenderVolume {
-    pub boundary: Box<dyn hittable::Hittable>,
+    pub boundary: Box<dyn hittable::Hittable + Send + Sync>,
     pub density: f32,
-    pub phase_function: Arc<dyn sampleable::Sampleable>,
+    pub phase_function: Arc<dyn sampleable::Sampleable + Send + Sync>,
 }
 
 impl RenderVolume {
     pub fn new(
-        boundary: Box<dyn hittable::Hittable>,
+        boundary: Box<dyn hittable::Hittable + Send + Sync>,
         density: f32,
-        phase_function: Arc<dyn sampleable::Sampleable>,
+        phase_function: Arc<dyn sampleable::Sampleable + Send + Sync>,
     ) -> Self {
         RenderVolume {
             boundary,

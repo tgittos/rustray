@@ -1,7 +1,59 @@
 # rustray
 
-A work-in-progress ray tracer following the ["Ray Tracing in One Weekend"](https://raytracing.github.io/) series, written while learning Rust. Scenes are described in TOML and rendered to PNGs in `samples/`.
+A work-in-progress ray tracer following the ["Ray Tracing in One Weekend"](https://raytracing.github.io/) series. Scenes are authored in TOML, loaded into `core::render::Render`, and rendered to PNGs under `samples/`. The library exposes both single-threaded and Rayon-powered renderers and records per-material timing stats.
 
+## Render a scene
+- Install the Rust 2024 toolchain.
+- Render a TOML scene (defaults to `scenes/bouncing_spheres.toml`, writes `samples/<scene>.png`):
+
+```bash
+cargo run --release --bin rustray -- [path/to/scene.toml] [--concurrent]
+```
+
+- Omit the path to use the default scene. Pass `--concurrent` to split the image into row chunks per CPU and render in parallel; the default mode runs the single-threaded `raytrace`.
+
+## Profile rendering
+- Sweep through several sample-per-pixel counts and generate a timing chart:
+
+```bash
+cargo run --release --bin rustray_profile -- [path/to/scene.toml] [--concurrent]
+```
+
+- The profiler renders each configured SPP in `src/bin/rustray_profile.rs` (defaults: 10, 50, 100, 200, 500), saving `samples/<scene>_<spp>.png`, printing percentiles from the stats tracker, and writing `profile_<scene>.png` using `charming`.
+
+## Scene format
+- Scenes round-trip through `core::scene_file::{load_render, save_render}`. The TOML schema includes:
+  - Global `width`, `samples`, `depth`, and a serialized `camera` (origin/look vectors, aperture, focal length, aspect ratio, and vertical FOV). Rays carry a random `time` value to support motion blur.
+  - `geometries`: tagged entries for `Sphere`, `Quad`, `Cube` (assembled from quads), or `World` (sky gradient).
+  - `materials`: tagged entries for `Lambertian`/`Metallic`/`Dielectric`/`DiffuseLight`/`Isotropic`/`World`, with textures `Color`, `Checker`, `Noise`, or `Uv` (uses assets like `assets/earth.jpg`).
+  - `objects`: pairs a geometry id with a material id plus optional `transforms` (`Rotate`, `Translate`, `Scale`, `Move` with time range for motion blur) and an optional `albedo` tint applied by `MaterialInstance`.
+  - `volumes`: participating media; references a boundary geometry, phase-function material, density, and optional transforms.
+- Scenes are deduped by id when serialized, so reused geometry/materials stay shared.
+
+## Project layout
+- `src/bin/rustray.rs` — CLI renderer that loads a TOML scene, optionally runs `raytrace_concurrent`, and writes `samples/<scene>.png`.
+- `src/bin/rustray_profile.rs` — profiling helper that renders multiple SPPs and emits a timing bar chart.
+- `src/lib.rs` — exposes `raytrace` (single-threaded) and `raytrace_concurrent` (Rayon) plus helpers for chunking and assembling scanlines.
+- `src/core/` — camera/ray/bbox primitives, BVH (`bvh`), render container (`render`), renderables/objects (`object`), volumes (`volume`), sky gradient (`world`), and TOML scene loader/saver (`scene_file`).
+- `src/geometry/` — hittables (sphere, quad, cube), transforms (rotate/translate/scale/move), and `GeometryInstance` that applies transforms and motion blur-aware bounds.
+- `src/materials/` — lambertian, metallic, dielectric, diffuse light, isotropic volumes, and `MaterialInstance` for optional albedo tinting; `src/textures/` covers color/checker/Perlin noise/UV textures.
+- `src/stats/` — `hdrhistogram`-based tracker plus chart rendering via `charming`.
+- `examples/` — programmatic scene builders that mirror the TOML files.
+- `samples/` holds rendered outputs; `target/` is build output (do not commit).
+
+## Rendering details
+- Pixels are sampled with stratified jitter (`sqrt(spp) x sqrt(spp)` grid). Gamma correction is applied via square root before saving.
+- BVH culling (built in `Scene::build_bvh`) sits in front of per-object hit tests; every hittable supplies a bounding box, including transformed/moving instances.
+- Rays keep their `time` through scattering to keep motion blur and animated transforms consistent.
+- Volumes implement an isotropic phase function; the world background is modeled as a `World` hittable/material pair.
+
+## Common tasks
+- Format: `cargo fmt`
+- Lint: `cargo clippy -- -D warnings`
+- Build: `cargo build`
+- Test: `cargo test` (no tests yet)
+
+## Sample renders
 [samples/next_week_scene.rs](samples/next_week_scene.rs)<br />
 [scenes/next_week_scene.toml](scenes/next_week_scene.toml)
 <details>
@@ -190,40 +242,8 @@ Image saved to samples/cornell_box.png
 
 ![](samples/cornell_box.png)
 
-## Quick start
-- Install the Rust toolchain (2024 edition).
-- Render a scene (defaults to `scenes/bouncing_spheres.toml`, writes `samples/bouncing_spheres.png`):
-
-```bash
-cargo run --release [path/to/scene.toml]
-```
-
-## Project layout
-- `src/main.rs` — binary entry point; loads a TOML scene file and hands it to `raytrace`, then writes `samples/<scene>.png`.
-- `src/lib.rs` — exposes the `raytrace` loop (takes a `&mut rand::rngs::ThreadRng` and a `core::render::Render`) and prints timing stats.
-- `src/core/` — camera/ray/bbox primitives, BVH, sky gradient (`world`), render container, scene loading/saving (`scene_file`), and renderable plumbing.
-- `src/geometry/` — hittable primitives (sphere, quad, cube assembled from quads), transform definitions, and an instance wrapper that applies transforms/motion blur.
-- `src/materials/` — scattering: lambertian, metallic, dielectric, diffuse light plus `MaterialInstance` for albedo tinting; `src/textures/` holds color/checker/perlin/UV textures.
-- `src/traits/` — `Hittable`, `Renderable`, `Sampleable`, and `Texturable` traits; math helpers live in `src/math/`; render timing is in `src/stats.rs`.
-
-## Scenes and composition
-- Scenes live in `scenes/*.toml` and round-trip through `core::scene_file`. Each scene specifies output width, samples per pixel, max depth, camera, and a list of geometries/materials.
-- Objects pair a geometry (`GeometryInstance` wraps a hittable with transforms such as translate/rotate/scale/move) with a material (`MaterialInstance` wraps a sampleable with optional albedo).
-- Available geometry: spheres, quads, cubes (built from six quads), and the infinite sky `world`. Materials include lambertian, metallic, dielectric, and diffuse light; textures include solid color, checker, noise, and UV images.
-
-## Common tasks
-- Format: `cargo fmt`
-- Lint: `cargo clippy -- -D warnings`
-- Build: `cargo build`
-- Render: `cargo run --release scenes/bouncing_spheres.toml`
-
-## Extending the renderer
-- Add geometry by implementing `Hittable` under `src/geometry/` (include a bounding box so BVH culling works).
-- Add materials by implementing `Sampleable` under `src/materials/` and textures via `Texturable` under `src/textures/`.
-- Pair them with `core::object::RenderObject` and add to a `Scene` (or the TOML format) to render new objects.
-
 ## Performance
 
-Render times scale exponentially with samples-per-pixel and max depth, with overall render times scaling non-linearly with hit/sample time.
+Render times scale exponentially with samples-per-pixel and max depth, with overall render times scaling non-linearly with hit/sample time. The profile binary writes bar charts like `profile_<scene>.png` (see `profile/profile_bouncing_spheres.png` for an example).
 
 ![](profile/profile_bouncing_spheres.png)

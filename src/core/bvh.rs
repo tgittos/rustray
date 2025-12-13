@@ -18,7 +18,7 @@ pub enum BvhNode {
 impl BvhNode {
     fn new(
         rng: &mut rand::rngs::ThreadRng,
-        objects: &[Box<dyn renderable::Renderable>],
+        objects: &[Box<dyn renderable::Renderable + Send + Sync>],
         mut indices: Vec<usize>,
     ) -> Self {
         assert!(
@@ -60,7 +60,7 @@ impl BvhNode {
 
     fn hit<'a>(
         &'a self,
-        objects: &'a [Box<dyn renderable::Renderable>],
+        objects: &'a [Box<dyn renderable::Renderable + Send + Sync>],
         ray: &crate::core::ray::Ray,
         t_min: f32,
         t_max: f32,
@@ -101,7 +101,7 @@ impl BvhNode {
     }
 
     fn box_compare(
-        objects: &[Box<dyn renderable::Renderable>],
+        objects: &[Box<dyn renderable::Renderable + Send + Sync>],
         a: usize,
         b: usize,
         axis: usize,
@@ -125,7 +125,7 @@ pub struct Bvh {
 impl Bvh {
     pub fn new(
         rng: &mut rand::rngs::ThreadRng,
-        objects: &[Box<dyn renderable::Renderable>],
+        objects: &[Box<dyn renderable::Renderable + Send + Sync>],
     ) -> Self {
         let indices = (0..objects.len()).collect::<Vec<_>>();
         Bvh {
@@ -139,7 +139,7 @@ impl Bvh {
 
     pub fn hit<'a>(
         &'a self,
-        objects: &'a [Box<dyn renderable::Renderable>],
+        objects: &'a [Box<dyn renderable::Renderable + Send + Sync>],
         ray: &ray::Ray,
         t_min: f32,
         t_max: f32,

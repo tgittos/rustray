@@ -3,18 +3,18 @@ use std::time;
 
 use crate::core::{ray, scene};
 use crate::math::vec;
-use crate::stats;
+use crate::stats::tracker;
 use crate::traits::renderable::Renderable;
 use crate::traits::{hittable, sampleable, texturable};
 
 /// Diffuse surface with a constant albedo.
 pub struct Lambertian {
-    pub texture: Box<dyn texturable::Texturable>,
+    pub texture: Box<dyn texturable::Texturable + Send + Sync>,
 }
 
 impl Lambertian {
     /// Creates a new diffuse material with the given albedo.
-    pub fn new(texture: Box<dyn texturable::Texturable>) -> Self {
+    pub fn new(texture: Box<dyn texturable::Texturable + Send + Sync>) -> Self {
         Self { texture }
     }
 }
@@ -41,23 +41,23 @@ impl sampleable::Sampleable for Lambertian {
         let hit_start = time::Instant::now();
         let maybe_hit = scene.hit(&new_ray, 0.001, f32::MAX);
         let hit_elapsed = hit_start.elapsed();
-        stats::add_hit_stat(stats::Stat::new(stats::LAMBERTIAN_HIT, hit_elapsed));
+        tracker::add_hit_stat(tracker::Stat::new(tracker::LAMBERTIAN_HIT, hit_elapsed));
         if let Some(new_hit_record) = maybe_hit {
             let bounce_start = time::Instant::now();
             let bounce = new_hit_record
                 .renderable
                 .sample(rng, &new_hit_record, scene, depth - 1);
             let bounce_elapsed = bounce_start.elapsed();
-            stats::add_sample_stat(stats::Stat::new(
-                stats::LAMBERTIAN_SAMPLE,
+            tracker::add_sample_stat(tracker::Stat::new(
+                tracker::LAMBERTIAN_SAMPLE,
                 sample_start
                     .elapsed()
                     .saturating_sub(hit_elapsed + bounce_elapsed),
             ));
             return self.texture.sample(&hit_record.hit) * (0.5 * bounce);
         }
-        stats::add_sample_stat(stats::Stat::new(
-            stats::LAMBERTIAN_SAMPLE,
+        tracker::add_sample_stat(tracker::Stat::new(
+            tracker::LAMBERTIAN_SAMPLE,
             sample_start.elapsed().saturating_sub(hit_elapsed),
         ));
 

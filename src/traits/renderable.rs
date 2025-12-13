@@ -6,7 +6,7 @@ use crate::math::vec;
 use crate::traits::hittable;
 
 /// Trait for objects that can be rendered in the scene.
-pub trait Renderable: Any {
+pub trait Renderable: Any + Send + Sync {
     /// Determines if a ray hits the renderable object within the given t range.
     /// Returns [`hittable::HitRecord`] Some(HitRecord) if there is a hit, otherwise None.
     ///

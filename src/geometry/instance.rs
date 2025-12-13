@@ -5,12 +5,12 @@ use crate::geometry::transform;
 use crate::traits::hittable;
 
 pub struct GeometryInstance {
-    pub ref_obj: Arc<dyn hittable::Hittable>,
+    pub ref_obj: Arc<dyn hittable::Hittable + Send + Sync>,
     pub transforms: Vec<transform::Transform>,
 }
 
 impl GeometryInstance {
-    pub fn new(obj: Arc<dyn hittable::Hittable>) -> Self {
+    pub fn new(obj: Arc<dyn hittable::Hittable + Send + Sync>) -> Self {
         Self {
             ref_obj: obj,
             transforms: Vec::new(),

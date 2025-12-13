@@ -4,7 +4,7 @@ use std::time;
 
 use crate::core::{ray, scene};
 use crate::math::vec;
-use crate::stats;
+use crate::stats::tracker;
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable;
@@ -55,11 +55,11 @@ impl sampleable::Sampleable for Metallic {
             new_hit_record = Some(record);
         }
         let hit_elapsed = hit_start.elapsed();
-        stats::add_hit_stat(stats::Stat::new(stats::METALLIC_HIT, hit_elapsed));
+        tracker::add_hit_stat(tracker::Stat::new(tracker::METALLIC_HIT, hit_elapsed));
 
         let Some(new_hit_record) = new_hit_record else {
-            stats::add_sample_stat(stats::Stat::new(
-                stats::METALLIC_SAMPLE,
+            tracker::add_sample_stat(tracker::Stat::new(
+                tracker::METALLIC_SAMPLE,
                 sample_start.elapsed().saturating_sub(hit_elapsed),
             ));
             return vec::Vec3::new(0.0, 0.0, 0.0);
@@ -70,8 +70,8 @@ impl sampleable::Sampleable for Metallic {
             .sample(rng, &new_hit_record, scene, depth - 1);
         let bounce_elapsed = bounce_start.elapsed();
 
-        stats::add_sample_stat(stats::Stat::new(
-            stats::METALLIC_SAMPLE,
+        tracker::add_sample_stat(tracker::Stat::new(
+            tracker::METALLIC_SAMPLE,
             sample_start
                 .elapsed()
                 .saturating_sub(hit_elapsed + bounce_elapsed),

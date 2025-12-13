@@ -3,15 +3,15 @@ use std::time;
 
 use crate::core::scene;
 use crate::math::vec;
-use crate::stats;
+use crate::stats::tracker;
 use crate::traits::{hittable, sampleable, texturable};
 
 pub struct DiffuseLight {
-    pub texture: Box<dyn texturable::Texturable>,
+    pub texture: Box<dyn texturable::Texturable + Send + Sync>,
 }
 
 impl DiffuseLight {
-    pub fn new(texture: Box<dyn texturable::Texturable>) -> Self {
+    pub fn new(texture: Box<dyn texturable::Texturable + Send + Sync>) -> Self {
         DiffuseLight { texture }
     }
 }
@@ -26,8 +26,8 @@ impl sampleable::Sampleable for DiffuseLight {
     ) -> vec::Vec3 {
         let sample_start = time::Instant::now();
         let result = self.texture.sample(&hit_record.hit);
-        stats::add_sample_stat(stats::Stat::new(
-            stats::DIFFUSE_LIGHT_SAMPLE,
+        tracker::add_sample_stat(tracker::Stat::new(
+            tracker::DIFFUSE_LIGHT_SAMPLE,
             sample_start.elapsed(),
         ));
         result

@@ -5,7 +5,7 @@ use std::time;
 
 use crate::core::{ray, scene};
 use crate::math::vec;
-use crate::stats;
+use crate::stats::tracker;
 use crate::traits::hittable;
 use crate::traits::renderable::Renderable;
 use crate::traits::sampleable::Sampleable;
@@ -76,7 +76,7 @@ impl Sampleable for Dielectric {
             f32::MAX,
         );
         let hit_elapsed = hit_start.elapsed();
-        stats::add_hit_stat(stats::Stat::new(stats::DIELECTRIC_HIT, hit_elapsed));
+        tracker::add_hit_stat(tracker::Stat::new(tracker::DIELECTRIC_HIT, hit_elapsed));
 
         if let Some(new_hit_record) = maybe_hit {
             let bounce_start = time::Instant::now();
@@ -85,8 +85,8 @@ impl Sampleable for Dielectric {
                 .sample(rng, &new_hit_record, scene, depth - 1);
             let bounce_elapsed = bounce_start.elapsed();
 
-            stats::add_sample_stat(stats::Stat::new(
-                stats::DIELECTRIC_SAMPLE,
+            tracker::add_sample_stat(tracker::Stat::new(
+                tracker::DIELECTRIC_SAMPLE,
                 sample_start
                     .elapsed()
                     .saturating_sub(hit_elapsed + bounce_elapsed),
@@ -94,8 +94,8 @@ impl Sampleable for Dielectric {
 
             attenuation * bounce
         } else {
-            stats::add_sample_stat(stats::Stat::new(
-                stats::DIELECTRIC_SAMPLE,
+            tracker::add_sample_stat(tracker::Stat::new(
+                tracker::DIELECTRIC_SAMPLE,
                 sample_start.elapsed().saturating_sub(hit_elapsed),
             ));
             vec::Vec3::new(0.0, 0.0, 0.0)

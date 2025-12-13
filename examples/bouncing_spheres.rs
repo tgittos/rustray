@@ -7,15 +7,18 @@ use rustray::materials::{dielectric, instance::MaterialInstance, lambertian, met
 use rustray::math::vec;
 use rustray::textures::{checker, color};
 
-use rustray::raytrace;
+use rustray::{raytrace, raytrace_concurrent};
 
 fn main() {
     let mut rng = rand::rng();
 
+    let mut args = std::env::args();
+    let is_concurrent = args.next().map(|s| s == "--concurrent").unwrap_or(false);
+
     let nx = 1200;
     let ar = 16.0 / 9.0;
     let ny = (nx as f32 / ar) as u32;
-    let ns = 100;
+    let ns = 500;
     let max_depth = 50;
 
     // scene setup
@@ -195,7 +198,11 @@ fn main() {
         render.depth
     );
 
-    let data = raytrace(&mut rng, &render);
+    let data = if is_concurrent {
+        raytrace_concurrent(&render)
+    } else {
+        raytrace(&mut rng, &render)
+    };
 
     match image::save_buffer(
         &Path::new("samples/bouncing_spheres.png"),

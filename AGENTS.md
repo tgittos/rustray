@@ -1,19 +1,20 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Binary entry point in `src/main.rs`; reusable rendering API in `src/lib.rs` (`raytrace` expects a caller-supplied `&mut rand::rngs::ThreadRng` and prints timing stats).
-- Scenes load from TOML files via `core::scene_file` (default `scenes/bouncing_spheres.toml`); `raytrace` takes a `core::render::Render` (width, samples, depth, camera, scene).
-- Core plumbing in `src/core/` (camera, ray, bbox, BVH, render container, world sky gradient); scene objects live in `core::object` and `core::scene`.
-- Geometry is in `src/geometry/` (primitives: sphere, quad, cube; transforms; instance wrapper applies transforms and motion blur).
-- Materials in `src/materials/` (lambertian, metallic, dielectric, diffuse light, instances with optional albedo tint); textures in `src/textures/` (color, checker, Perlin noise, UV image).
-- Traits under `src/traits/` (`Hittable`, `Renderable`, `Sampleable`, `Texturable`); math helpers in `src/math/` (vec, mat, interval, Perlin); timing stats in `src/stats.rs`.
-- Render output is written to `samples/<scene>.png`; `target/` is build output (do not commit).
+- Binaries live in `src/bin/`: `rustray.rs` loads a TOML scene and renders it; `rustray_profile.rs` sweeps SPP counts and writes timing charts. `src/lib.rs` exposes `raytrace` (single-threaded, requires `&mut rand::rngs::ThreadRng`) and `raytrace_concurrent` (Rayon).
+- Scenes load from TOML via `core::scene_file` (default `scenes/bouncing_spheres.toml`); `core::render::Render` bundles width, samples, depth, camera, and scene. `scene_file` also supports saving a render back to TOML, deduping shared geometries/materials.
+- Core plumbing in `src/core/` (camera, ray, bbox, BVH, render container, renderables/object wiring, world sky gradient, volumes). Scene objects live in `core::object` and `core::scene` with optional BVH acceleration.
+- Geometry lives in `src/geometry/` (sphere, quad, cube assembled from quads; transforms include rotate/translate/scale/move for motion blur; `GeometryInstance` applies transforms and propagates bounding boxes).
+- Materials in `src/materials/` (lambertian, metallic, dielectric, diffuse light, isotropic volume phase function, `MaterialInstance` for optional albedo tint); textures in `src/textures/` (color, checker, Perlin noise, UV image backed by assets like `assets/earth.jpg`).
+- Traits under `src/traits/` (`Hittable`, `Renderable`, `Sampleable`, `Texturable`); math helpers in `src/math/` (vec, mat, interval, Perlin); timing stats under `src/stats/`.
+- Render output is written to `samples/<scene>.png` (and `samples/<scene>_<spp>.png` for profiling); `target/` is build output (do not commit).
 
 ## Build, Test, and Development Commands
 - `cargo fmt` — format the workspace; run before sending changes.
 - `cargo clippy -- -D warnings` — lint and keep the codebase warning-free.
-- `cargo build` — compile library and binary.
-- `cargo run --release [scenes/bouncing_spheres.toml]` — render a scene to `samples/<scene>.png`; override the scene path with a CLI arg.
+- `cargo build` — compile library and binaries.
+- `cargo run --release --bin rustray -- [scenes/bouncing_spheres.toml] [--concurrent]` — render a scene to `samples/<scene>.png`; omit the path for the default scene and add `--concurrent` for Rayon-based chunking.
+- `cargo run --release --bin rustray_profile -- [scenes/bouncing_spheres.toml] [--concurrent]` — profile multiple SPP settings, emit timing stats, and write `profile_<scene>.png`.
 - `cargo test` — executes tests when added; currently none exist.
 
 ## Coding Style & Naming Conventions
@@ -26,7 +27,7 @@
 ## Testing Guidelines
 - Add unit tests near modules (e.g., `src/math/vec.rs`) and integration tests under `tests/` that exercise ray paths end-to-end.
 - Prefer deterministic randomness in tests by seeding an RNG (`StdRng` or similar) when using functions that accept generic `rand::Rng`.
-- Cover hit detection edge cases (`t_min`/`t_max`), BVH culling, motion-blurred transforms, refraction/reflectance correctness, and texture sampling (checker, noise, UV).
+- Cover hit detection edge cases (`t_min`/`t_max`), BVH culling, motion-blurred transforms, participating media, refraction/reflectance correctness, and texture sampling (checker, noise, UV).
 - Keep tests fast; avoid large renders—use tiny viewports (e.g., 16x8 with few samples).
 
 ## Commit & Pull Request Guidelines

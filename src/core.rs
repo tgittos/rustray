@@ -1,4 +1,5 @@
 //! Core math and scene structures.
+pub mod acceleration;
 pub mod bbox;
 pub mod bvh;
 pub mod camera;

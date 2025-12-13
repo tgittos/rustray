@@ -3,7 +3,7 @@ use std::{path::Path, time};
 
 use crate::core::{bvh, object, ray, render};
 use crate::math::vec;
-use crate::stats;
+use crate::stats::tracker;
 use crate::traits::{hittable, renderable};
 
 /// Collection of renderable objects making up the world.
@@ -23,7 +23,7 @@ impl Scene {
     }
 
     /// Adds a renderable object to the scene.
-    pub fn add_object(&mut self, object: Box<dyn renderable::Renderable>) {
+    pub fn add_object(&mut self, object: Box<dyn renderable::Renderable + Send + Sync>) {
         self.renderables.add(object);
     }
 
@@ -54,7 +54,7 @@ impl renderable::Renderable for Scene {
         for object in self.renderables.objects.iter() {
             let hit_start = time::Instant::now();
             if let Some(temp_record) = object.hit(ray, t_min, closest_so_far) {
-                stats::add_hit_stat(stats::Stat::new(stats::SCENE_HIT, hit_start.elapsed()));
+                tracker::add_hit_stat(tracker::Stat::new(tracker::SCENE_HIT, hit_start.elapsed()));
 
                 closest_so_far = temp_record.hit.t;
                 hit_record = Some(temp_record);
@@ -83,8 +83,8 @@ impl renderable::Renderable for Scene {
     ) -> vec::Vec3 {
         let sample_start = time::Instant::now();
         let result = hit_record.renderable.sample(rng, hit_record, scene, depth);
-        stats::add_sample_stat(stats::Stat::new(
-            stats::SCENE_SAMPLE,
+        tracker::add_sample_stat(tracker::Stat::new(
+            tracker::SCENE_SAMPLE,
             sample_start.elapsed(),
         ));
         result

@@ -307,7 +307,7 @@ struct RegistryBuilder {
 impl RegistryBuilder {
     fn register_geometry(
         &mut self,
-        geometry: &std::sync::Arc<dyn hittable::Hittable>,
+        geometry: &std::sync::Arc<dyn hittable::Hittable + Send + Sync>,
     ) -> Result<usize, SceneFileError> {
         let key = arc_key(geometry);
         if let Some(existing) = self.geometry_ids.get(&key) {
@@ -325,7 +325,7 @@ impl RegistryBuilder {
 
     fn register_material(
         &mut self,
-        material: &std::sync::Arc<dyn sampleable::Sampleable>,
+        material: &std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
     ) -> Result<usize, SceneFileError> {
         let key = arc_key(material);
         if let Some(existing) = self.material_ids.get(&key) {
@@ -344,7 +344,7 @@ impl RegistryBuilder {
 
 impl GeometryTemplate {
     fn from_hittable(
-        hittable: &std::sync::Arc<dyn hittable::Hittable>,
+        hittable: &std::sync::Arc<dyn hittable::Hittable + Send + Sync>,
     ) -> Result<Self, SceneFileError> {
         if let Some(sphere) = hittable.as_any().downcast_ref::<sphere::Sphere>() {
             return Ok(GeometryTemplate::Sphere(sphere.clone()));
@@ -364,19 +364,16 @@ impl GeometryTemplate {
         ))
     }
 
-    fn to_hittable(&self) -> std::sync::Arc<dyn hittable::Hittable> {
+    fn to_hittable(&self) -> std::sync::Arc<dyn hittable::Hittable + Send + Sync> {
         match self {
-            GeometryTemplate::Sphere(sphere) => {
-                std::sync::Arc::new(sphere.clone()) as std::sync::Arc<dyn hittable::Hittable>
-            }
-            GeometryTemplate::Quad(quad) => {
-                std::sync::Arc::new(quad.clone()) as std::sync::Arc<dyn hittable::Hittable>
-            }
-            GeometryTemplate::Cube(cube) => {
-                std::sync::Arc::new(cube.clone()) as std::sync::Arc<dyn hittable::Hittable>
-            }
+            GeometryTemplate::Sphere(sphere) => std::sync::Arc::new(sphere.clone())
+                as std::sync::Arc<dyn hittable::Hittable + Send + Sync>,
+            GeometryTemplate::Quad(quad) => std::sync::Arc::new(quad.clone())
+                as std::sync::Arc<dyn hittable::Hittable + Send + Sync>,
+            GeometryTemplate::Cube(cube) => std::sync::Arc::new(cube.clone())
+                as std::sync::Arc<dyn hittable::Hittable + Send + Sync>,
             GeometryTemplate::World(world) => {
-                std::sync::Arc::new(*world) as std::sync::Arc<dyn hittable::Hittable>
+                std::sync::Arc::new(*world) as std::sync::Arc<dyn hittable::Hittable + Send + Sync>
             }
         }
     }
@@ -384,7 +381,7 @@ impl GeometryTemplate {
 
 impl MaterialTemplate {
     fn from_sampleable(
-        material: &std::sync::Arc<dyn sampleable::Sampleable>,
+        material: &std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
     ) -> Result<Self, SceneFileError> {
         if let Some(lambert) = material.as_any().downcast_ref::<lambertian::Lambertian>() {
             return Ok(MaterialTemplate::Lambertian {
@@ -419,25 +416,25 @@ impl MaterialTemplate {
         ))
     }
 
-    fn to_sampleable(&self) -> Result<std::sync::Arc<dyn sampleable::Sampleable>, SceneFileError> {
-        let material: std::sync::Arc<dyn sampleable::Sampleable> = match self {
+    fn to_sampleable(
+        &self,
+    ) -> Result<std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>, SceneFileError> {
+        let material: std::sync::Arc<dyn sampleable::Sampleable + Send + Sync> = match self {
             MaterialTemplate::Lambertian { texture } => {
                 std::sync::Arc::new(lambertian::Lambertian::new(texture.to_texturable()?))
             }
             MaterialTemplate::Isotropic { texture } => {
                 std::sync::Arc::new(volume::Isotropic::new(texture.to_texturable()?))
             }
-            MaterialTemplate::Metallic(metal) => {
-                std::sync::Arc::new(metal.clone()) as std::sync::Arc<dyn sampleable::Sampleable>
-            }
+            MaterialTemplate::Metallic(metal) => std::sync::Arc::new(metal.clone())
+                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
             MaterialTemplate::Dielectric(dielectric) => std::sync::Arc::new(dielectric.clone())
-                as std::sync::Arc<dyn sampleable::Sampleable>,
+                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
             MaterialTemplate::DiffuseLight { texture } => {
                 std::sync::Arc::new(diffuse_light::DiffuseLight::new(texture.to_texturable()?))
             }
-            MaterialTemplate::World(world) => {
-                std::sync::Arc::new(*world) as std::sync::Arc<dyn sampleable::Sampleable>
-            }
+            MaterialTemplate::World(world) => std::sync::Arc::new(*world)
+                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
         };
 
         Ok(material)
@@ -464,8 +461,10 @@ impl TextureTemplate {
         ))
     }
 
-    fn to_texturable(&self) -> Result<Box<dyn texturable::Texturable>, SceneFileError> {
-        let texture: Box<dyn texturable::Texturable> = match self {
+    fn to_texturable(
+        &self,
+    ) -> Result<Box<dyn texturable::Texturable + Send + Sync>, SceneFileError> {
+        let texture: Box<dyn texturable::Texturable + Send + Sync> = match self {
             TextureTemplate::Color(color) => Box::new(color.clone()),
             TextureTemplate::Checker(checker) => Box::new(checker.clone()),
             TextureTemplate::Noise(noise) => Box::new(noise.clone()),
