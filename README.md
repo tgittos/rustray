@@ -8,55 +8,55 @@ A work-in-progress ray tracer following the ["Ray Tracing in One Weekend"](https
 <summary>Render Stats</summary>
 
 ```
-Rendering a 800x800 image with 500 samples per pixel and max depth 40
+Rendering a 800x800 image with 10000 samples per pixel and max depth 40
 Rendering Stats:
 --------------------------
-Total Hits: 679579076
-Total Samples: 469923612
+Total Hits: 14040430595
+Total Samples: 9708499866
 Stat: scene_hit
   P50: (375ns, 0ns)
-  P90: (666ns, 0ns)
+  P90: (625ns, 0ns)
   P99: (1.25µs, 0ns)
 
 Stat: lambertian_hit
-  P50: (541ns, 0ns)
-  P90: (1.417µs, 0ns)
-  P99: (3.251µs, 0ns)
+  P50: (500ns, 0ns)
+  P90: (1.375µs, 0ns)
+  P99: (3.167µs, 0ns)
 
 Stat: lambertian_sample
   P50: (0ns, 124ns)
-  P90: (0ns, 207ns)
+  P90: (0ns, 168ns)
   P99: (0ns, 418ns)
 
 Stat: metallic_hit
   P50: (417ns, 0ns)
-  P90: (833ns, 0ns)
-  P99: (1.459µs, 0ns)
+  P90: (792ns, 0ns)
+  P99: (1.417µs, 0ns)
 
 Stat: metallic_sample
   P50: (0ns, 125ns)
-  P90: (0ns, 251ns)
-  P99: (0ns, 459ns)
+  P90: (0ns, 209ns)
+  P99: (0ns, 458ns)
 
 Stat: dielectric_hit
   P50: (500ns, 0ns)
-  P90: (792ns, 0ns)
-  P99: (1.459µs, 0ns)
+  P90: (791ns, 0ns)
+  P99: (1.417µs, 0ns)
 
 Stat: dielectric_sample
-  P50: (0ns, 124ns)
+  P50: (0ns, 84ns)
   P90: (0ns, 166ns)
-  P99: (0ns, 208ns)
+  P99: (0ns, 168ns)
 
 Stat: diffuse_light_sample
   P50: (0ns, 1ns)
   P90: (0ns, 42ns)
   P99: (0ns, 42ns)
 
-Total Hit Time: 0h 6m 51s 918ms
-Total Sample Time: 0h 0m 58s 624ms
+Total Hit Time: 2h 18m 20s 14ms
+Total Sample Time: 0h 19m 27s 557ms
 --------------------------
-Render Wall Time: 0h 15m 51s 668ms
+Render Wall Time: 5h 20m 14s 456ms
 --------------------------
 Image saved.
 ```
