@@ -74,42 +74,7 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
 
     let wall_time = render_start.elapsed();
     let stats = tracker::get_stats();
-
-    println!("Rendering Stats:");
-    println!("--------------------------");
-    println!("Total Hits: {}", stats.total_hits());
-    println!("Total Samples: {}", stats.total_samples());
-    vec![
-        tracker::SCENE_HIT,
-        tracker::LAMBERTIAN_HIT,
-        tracker::LAMBERTIAN_SAMPLE,
-        tracker::METALLIC_HIT,
-        tracker::METALLIC_SAMPLE,
-        tracker::DIELECTRIC_HIT,
-        tracker::DIELECTRIC_SAMPLE,
-        tracker::DIFFUSE_LIGHT_SAMPLE,
-    ]
-    .iter()
-    .for_each(|stat_name| {
-        println!(
-            "Stat: {}\n  P50: {:?}\n  P90: {:?}\n  P99: {:?}\n",
-            stat_name,
-            stats.p50_by_name(stat_name),
-            stats.p90_by_name(stat_name),
-            stats.p99_by_name(stat_name)
-        );
-    });
-    println!(
-        "Total Hit Time: {}",
-        format_duration(stats.total_hit_time())
-    );
-    println!(
-        "Total Sample Time: {}",
-        format_duration(stats.total_sample_time())
-    );
-    println!("--------------------------");
-    println!("Render Wall Time: {}", format_duration(wall_time));
-    println!("--------------------------");
+    print_stats(&stats, wall_time);
 
     image_data
 }
@@ -147,7 +112,28 @@ pub fn raytrace_concurrent(render: &render::Render) -> Vec<u8> {
 
     let wall_time = render_start.elapsed();
     let stats = tracker::get_stats();
+    print_stats(&stats, wall_time);
+    image_data
+}
 
+fn format_duration(dur: time::Duration) -> String {
+    let hours = dur.as_secs() / 3600;
+    let minutes = (dur.as_secs() % 3600) / 60;
+    let seconds = dur.as_secs() % 60;
+    let millis = dur.subsec_millis();
+    format!("{}h {}m {}s {}ms", hours, minutes, seconds, millis)
+}
+
+fn div_duration(dur: time::Duration, divisor: usize) -> time::Duration {
+    if divisor == 0 {
+        return dur;
+    }
+    let nanos = dur.as_nanos() / divisor as u128;
+    let clamped = nanos.min(u64::MAX as u128) as u64;
+    time::Duration::from_nanos(clamped)
+}
+
+fn print_stats(stats: &tracker::StatsSnapshot, wall_time: time::Duration) {
     println!("Rendering Stats:");
     println!("--------------------------");
     println!("Total Hits: {}", stats.total_hits());
@@ -172,26 +158,34 @@ pub fn raytrace_concurrent(render: &render::Render) -> Vec<u8> {
             stats.p99_by_name(stat_name)
         );
     });
+
+    let threads = stats.threads_used.max(1);
+    let cpu_hit_time = stats.total_hit_time();
+    let cpu_sample_time = stats.total_sample_time();
+    let cpu_total = cpu_hit_time + cpu_sample_time;
+
+    let thread_label = if threads == 1 { "thread" } else { "threads" };
     println!(
-        "Total Hit Time: {}",
-        format_duration(stats.total_hit_time())
+        "CPU Hit Time (avg over {} {}): {}",
+        threads,
+        thread_label,
+        format_duration(div_duration(cpu_hit_time, threads))
     );
     println!(
-        "Total Sample Time: {}",
-        format_duration(stats.total_sample_time())
+        "CPU Sample Time (avg over {} {}): {}",
+        threads,
+        thread_label,
+        format_duration(div_duration(cpu_sample_time, threads))
+    );
+    println!(
+        "CPU Total Time (avg over {} {}): {}",
+        threads,
+        thread_label,
+        format_duration(div_duration(cpu_total, threads))
     );
     println!("--------------------------");
     println!("Render Wall Time: {}", format_duration(wall_time));
     println!("--------------------------");
-    image_data
-}
-
-fn format_duration(dur: time::Duration) -> String {
-    let hours = dur.as_secs() / 3600;
-    let minutes = (dur.as_secs() % 3600) / 60;
-    let seconds = dur.as_secs() % 60;
-    let millis = dur.subsec_millis();
-    format!("{}h {}m {}s {}ms", hours, minutes, seconds, millis)
 }
 
 pub(crate) fn raytrace_chunk(

@@ -19,7 +19,7 @@ cargo run --release --bin rustray -- [path/to/scene.toml] [--concurrent]
 cargo run --release --bin rustray_profile -- [path/to/scene.toml] [--concurrent]
 ```
 
-- The profiler renders each configured SPP in `src/bin/rustray_profile.rs` (defaults: 10, 50, 100, 200, 500), saving `samples/<scene>_<spp>.png`, printing percentiles from the stats tracker, and writing `profile_<scene>.png` using `charming`.
+- The profiler renders each configured SPP in `src/bin/rustray_profile.rs` (defaults: 10, 50, 100, 200, 500, and 1000), saving `samples/<scene>_<spp>.png`, printing percentiles from the stats tracker, and writing `profile_<scene>.png` using `charming`.
 
 ## Scene format
 - Scenes round-trip through `core::scene_file::{load_render, save_render}`. The TOML schema includes:
@@ -54,6 +54,11 @@ cargo run --release --bin rustray_profile -- [path/to/scene.toml] [--concurrent]
 - Test: `cargo test` (no tests yet)
 
 ## Sample renders
+
+### Final scene from "Ray Tracing in One Weekend: The Next Week"
+
+400 boxes, 1,000+ spheres, 1 diffuse light, glass/metal/diffuse/perlin noise/UV mapping materials, movement transformations
+
 [samples/next_week_scene.rs](samples/next_week_scene.rs)<br />
 [scenes/next_week_scene.toml](scenes/next_week_scene.toml)
 <details>
@@ -116,6 +121,10 @@ Image saved.
 
 ![](samples/next_week_scene.png)
 
+### Final scene from "Ray Tracing in One Weekend" 
+
+- 400+ spheres, glass/metal/diffuse materials
+
 [samples/bouncing_spheres.rs](samples/bouncing_spheres.rs)<br />
 [scenes/bouncing_spheres.toml](scenes/bouncing_spheres.toml)
 
@@ -123,61 +132,63 @@ Image saved.
 <summary>Render Stats</summary>
 
 ```
-Rendering a 1200x2133.3333 image with 100 samples per pixel and max depth 50
+Rendering a 1200x2133.3333 image with 1000 samples per pixel and max depth 50 using 10 threads
 Rendering Stats:
 --------------------------
-Total Hits: 213108951
-Total Samples: 132108951
+Total Hits: 1269646788
+Total Samples: 1269646788
 Stat: scene_hit
-  P50: (375ns, 0ns)
-  P90: (583ns, 0ns)
-  P99: (750ns, 0ns)
+  P50: (0ns, 0ns)
+  P90: (0ns, 0ns)
+  P99: (0ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (291ns, 0ns)
-  P90: (416ns, 0ns)
-  P99: (667ns, 0ns)
+  P50: (292ns, 0ns)
+  P90: (458ns, 0ns)
+  P99: (1µs, 0ns)
 
 Stat: lambertian_sample
-  P50: (0ns, 125ns)
-  P90: (0ns, 168ns)
-  P99: (0ns, 417ns)
+  P50: (0ns, 126ns)
+  P90: (0ns, 374ns)
+  P99: (0ns, 583ns)
 
 Stat: metallic_hit
-  P50: (291ns, 0ns)
-  P90: (417ns, 0ns)
-  P99: (792ns, 0ns)
+  P50: (292ns, 0ns)
+  P90: (500ns, 0ns)
+  P99: (1.042µs, 0ns)
 
 Stat: metallic_sample
-  P50: (0ns, 125ns)
-  P90: (0ns, 208ns)
-  P99: (0ns, 458ns)
+  P50: (0ns, 165ns)
+  P90: (0ns, 334ns)
+  P99: (0ns, 583ns)
 
 Stat: dielectric_hit
-  P50: (375ns, 0ns)
-  P90: (584ns, 0ns)
-  P99: (916ns, 0ns)
+  P50: (416ns, 0ns)
+  P90: (666ns, 0ns)
+  P99: (1.417µs, 0ns)
 
 Stat: dielectric_sample
-  P50: (0ns, 84ns)
-  P90: (0ns, 166ns)
-  P99: (0ns, 168ns)
+  P50: (0ns, 125ns)
+  P90: (0ns, 168ns)
+  P99: (0ns, 375ns)
 
 Stat: diffuse_light_sample
   P50: (0ns, 0ns)
   P90: (0ns, 0ns)
   P99: (0ns, 0ns)
 
-Total Hit Time: 0h 1m 10s 841ms
-Total Sample Time: 0h 0m 17s 152ms
+CPU Hit Time (avg over 10 threads): 0h 0m 44s 30ms
+CPU Sample Time (avg over 10 threads): 0h 0m 22s 498ms
+CPU Total Time (avg over 10 threads): 0h 1m 6s 528ms
 --------------------------
-Render Wall Time: 0h 1m 47s 403ms
+Render Wall Time: 0h 2m 46s 502ms
 --------------------------
-Image saved to samples/bouncing_spheres.png
 ```
 </details>
 
 ![](samples/bouncing_spheres.png)
+
+### Cornell Box
 
 [samples/cornell_box.rs](samples/cornell_box.rs)<br />
 [scenes/cornell_box.toml](scenes/cornell_box.toml)
@@ -186,25 +197,25 @@ Image saved to samples/bouncing_spheres.png
 <summary>Render Stats</summary>
 
 ```
-Rendering a 600x600 image with 1000 samples per pixel and max depth 100
+Rendering a 600x600 image with 10000 samples per pixel and max depth 100 using 10 threads
 Rendering Stats:
 --------------------------
-Total Hits: 2146598937
-Total Samples: 1848107396
+Total Hits: 19067882489
+Total Samples: 19231402237
 Stat: scene_hit
-  P50: (125ns, 0ns)
-  P90: (208ns, 0ns)
-  P99: (250ns, 0ns)
+  P50: (0ns, 0ns)
+  P90: (0ns, 0ns)
+  P99: (0ns, 0ns)
 
 Stat: lambertian_hit
-  P50: (208ns, 0ns)
-  P90: (292ns, 0ns)
-  P99: (375ns, 0ns)
+  P50: (292ns, 0ns)
+  P90: (459ns, 0ns)
+  P99: (875ns, 0ns)
 
 Stat: lambertian_sample
-  P50: (0ns, 84ns)
-  P90: (0ns, 168ns)
-  P99: (0ns, 417ns)
+  P50: (0ns, 168ns)
+  P90: (0ns, 584ns)
+  P99: (0ns, 1.126µs)
 
 Stat: metallic_hit
   P50: (0ns, 0ns)
@@ -227,14 +238,15 @@ Stat: dielectric_sample
   P99: (0ns, 0ns)
 
 Stat: diffuse_light_sample
-  P50: (0ns, 1ns)
+  P50: (0ns, 41ns)
   P90: (0ns, 42ns)
   P99: (0ns, 42ns)
 
-Total Hit Time: 0h 6m 49s 812ms
-Total Sample Time: 0h 3m 50s 750ms
+CPU Hit Time (avg over 10 threads): 0h 10m 34s 938ms
+CPU Sample Time (avg over 10 threads): 0h 9m 33s 554ms
+CPU Total Time (avg over 10 threads): 0h 20m 8s 492ms
 --------------------------
-Render Wall Time: 0h 13m 52s 956ms
+Render Wall Time: 0h 35m 0s 612ms
 --------------------------
 Image saved to samples/cornell_box.png
 ```
@@ -244,6 +256,19 @@ Image saved to samples/cornell_box.png
 
 ## Performance
 
-Render times scale exponentially with samples-per-pixel and max depth, with overall render times scaling non-linearly with hit/sample time. The profile binary writes bar charts like `profile_<scene>.png` (see `profile/profile_bouncing_spheres.png` for an example).
+Concurrent rendering is more efficient on multi-core machines vs. single threaded rendering, however in both methods the render time grows exponentially with pixels-per-sample, max depth, and scene complexity (number of objects, types of materials, etc).
+
+Melt your CPU rendering pretty things.
+![](assets/melt.png)
+
+### Concurrent (10 threads)
+
+Profiling render [scenes/bouncing_spheres.toml](scenes/bouncing_spheres.toml) at 10, 100, 200, 500, and 1000 samples-per-pixel.
+
+![](profile/profile_bouncing_spheres_concurrent.png)
+
+### Single-threaded
+
+Profiling render [scenes/bouncing_spheres.toml](scenes/bouncing_spheres.toml) at 10, 100, 200, 500, and 1000 samples-per-pixel.
 
 ![](profile/profile_bouncing_spheres.png)

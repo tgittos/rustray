@@ -3,6 +3,7 @@ use charming::{
     component::{Axis, Grid, Legend, Title},
     element::{AxisPointer, AxisPointerType, AxisType, Tooltip, Trigger},
     series::Bar,
+    theme::Theme,
 };
 use std::time;
 
@@ -12,6 +13,7 @@ pub fn chart(
     hit_ts: &Vec<time::Duration>,
     sample_ts: &Vec<time::Duration>,
     total_ts: &Vec<time::Duration>,
+    is_concurrent: bool,
 ) -> std::io::Result<()> {
     let c = Chart::new()
         .title(Title::new().text("Render Profile"))
@@ -54,8 +56,12 @@ pub fn chart(
                 .data(total_ts.iter().map(|t| t.as_secs() as i32).collect()),
         );
 
-    let mut renderer = ImageRenderer::new(1000, 800);
-    let chart_filename = format!("profile_{}.png", filename);
+    let mut renderer = ImageRenderer::new(1000, 800).theme(Theme::Vintage);
+    let chart_filename = if is_concurrent {
+        format!("profile/profile_{}_concurrent.png", filename)
+    } else {
+        format!("profile/profile_{}.png", filename)
+    };
     match renderer.save_format(ImageFormat::Png, &c, &chart_filename) {
         Ok(_) => Ok(()),
         Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),

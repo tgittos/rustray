@@ -1,6 +1,9 @@
 use hdrhistogram::Histogram;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time;
 
 const HIST_LOW: u64 = 1;
@@ -51,6 +54,14 @@ impl Metric {
         self.count += 1;
     }
 
+    fn merge(&mut self, other: &Metric) {
+        self.hist
+            .add(&other.hist)
+            .expect("failed to merge stats histogram");
+        self.total += other.total;
+        self.count += other.count;
+    }
+
     fn percentile(&self, quantile: f64) -> time::Duration {
         if self.count == 0 {
             time::Duration::default()
@@ -67,6 +78,19 @@ pub struct Stats {
     all_sample: Metric,
 }
 
+pub struct StatsSnapshot {
+    pub stats: Stats,
+    pub threads_used: usize,
+}
+
+impl Deref for StatsSnapshot {
+    type Target = Stats;
+
+    fn deref(&self) -> &Self::Target {
+        &self.stats
+    }
+}
+
 impl Stats {
     pub fn new() -> Self {
         Stats {
@@ -75,6 +99,13 @@ impl Stats {
             all_hit: Metric::new(),
             all_sample: Metric::new(),
         }
+    }
+
+    pub fn merge(&mut self, other: &Self) {
+        merge_metric_map(&mut self.hit_metrics, &other.hit_metrics);
+        merge_metric_map(&mut self.sample_metrics, &other.sample_metrics);
+        self.all_hit.merge(&other.all_hit);
+        self.all_sample.merge(&other.all_sample);
     }
 
     pub fn add_hit_stat(&mut self, stat: Stat) {
@@ -188,6 +219,15 @@ impl Stats {
     }
 }
 
+fn merge_metric_map(
+    target: &mut HashMap<&'static str, Metric>,
+    source: &HashMap<&'static str, Metric>,
+) {
+    for (name, metric) in source {
+        target.entry(name).or_insert_with(Metric::new).merge(metric);
+    }
+}
+
 pub static DIELECTRIC_HIT: &str = "dielectric_hit";
 pub static DIELECTRIC_SAMPLE: &str = "dielectric_sample";
 pub static LAMBERTIAN_HIT: &str = "lambertian_hit";
@@ -199,24 +239,56 @@ pub static DIFFUSE_LIGHT_SAMPLE: &str = "diffuse_light_sample";
 pub static SCENE_HIT: &str = "scene_hit";
 pub static SCENE_SAMPLE: &str = "scene_sample";
 
-static STATS: sync::LazyLock<sync::Mutex<Stats>> =
-    sync::LazyLock::new(|| sync::Mutex::new(Stats::new()));
+static STATS: sync::LazyLock<Mutex<HashMap<thread::ThreadId, Arc<Mutex<Stats>>>>> =
+    sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+thread_local! {
+    static THREAD_STATS: Arc<Mutex<Stats>> = {
+        let stats = Arc::new(Mutex::new(Stats::new()));
+        STATS
+            .lock()
+            .unwrap()
+            .insert(thread::current().id(), stats.clone());
+        stats
+    };
+}
 
 pub fn reset() {
-    let mut stats = STATS.lock().unwrap();
-    *stats = Stats::new();
+    let stats = STATS.lock().unwrap();
+    for stats_for_thread in stats.values() {
+        let mut guard = stats_for_thread.lock().unwrap();
+        *guard = Stats::new();
+    }
 }
 
 pub fn add_hit_stat(stat: Stat) {
-    let mut stats = STATS.lock().unwrap();
-    stats.add_hit_stat(stat);
+    THREAD_STATS.with(|stats| {
+        let mut guard = stats.lock().unwrap();
+        guard.add_hit_stat(stat);
+    });
 }
 
 pub fn add_sample_stat(stat: Stat) {
-    let mut stats = STATS.lock().unwrap();
-    stats.add_sample_stat(stat);
+    THREAD_STATS.with(|stats| {
+        let mut guard = stats.lock().unwrap();
+        guard.add_sample_stat(stat);
+    });
 }
 
-pub fn get_stats() -> sync::MutexGuard<'static, Stats> {
-    STATS.lock().unwrap()
+pub fn get_stats() -> StatsSnapshot {
+    let stats = STATS.lock().unwrap();
+    let mut combined = Stats::new();
+    let mut threads_used = 0;
+    for stats_for_thread in stats.values() {
+        let guard = stats_for_thread.lock().unwrap();
+        if guard.total_hits() == 0 && guard.total_samples() == 0 {
+            continue;
+        }
+        combined.merge(&guard);
+        threads_used += 1;
+    }
+    StatsSnapshot {
+        stats: combined,
+        threads_used,
+    }
 }

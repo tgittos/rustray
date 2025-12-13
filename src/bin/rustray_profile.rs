@@ -8,8 +8,8 @@ use rustray::{raytrace, raytrace_concurrent};
 
 // const SAMPLES: &[u32] = &[10, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 // const SAMPLE_LABELS: &[&str] = &["10", "50", "100", "200", "500", "1k", "2k", "5k", "10k"];
-const SAMPLES: &[u32] = &[10, 50, 100, 200, 500];
-const SAMPLE_LABELS: &[&str] = &["10", "50", "100", "200", "500"];
+const SAMPLES: &[u32] = &[10, 50, 100, 200, 500, 1000];
+const SAMPLE_LABELS: &[&str] = &["10", "50", "100", "200", "500", "1k"];
 
 fn format_duration(dur: time::Duration) -> String {
     let secs = dur.as_secs();
@@ -107,7 +107,7 @@ fn main() {
         };
 
         match image::save_buffer(
-            &Path::new(&format!("{}.png", filename)),
+            &Path::new(&format!("samples/{}.png", filename)),
             data.as_slice(),
             render.width,
             (render.width as f32 / render.camera.aspect_ratio) as u32,
@@ -124,6 +124,16 @@ fn main() {
         .map(|&t| tracker::Stat::new("Total", t))
         .collect::<Vec<tracker::Stat>>();
 
+    // avg hit times and sample times w/ CPU count if concurrent
+    if is_concurrent {
+        for t in hit_times.iter_mut() {
+            *t = *t / num_cpus::get() as u32;
+        }
+        for t in sample_times.iter_mut() {
+            *t = *t / num_cpus::get() as u32;
+        }
+    }
+
     match charts::chart(
         scene_path
             .file_stem()
@@ -133,6 +143,7 @@ fn main() {
         &hit_times,
         &sample_times,
         &total_stats.iter().map(|s| s.value).collect(),
+        is_concurrent,
     ) {
         Ok(_) => println!("Render profile chart saved."),
         Err(e) => eprintln!("Failed to save render profile chart: {}", e),
