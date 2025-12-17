@@ -2,8 +2,19 @@
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray};
-use crate::math::vec;
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
+
+struct SpherePDF;
+impl pdf::PDF for SpherePDF {
+    fn value(&self, _direction: vec::Vec3) -> f32 {
+        return 1.0 / (4.0 * std::f32::consts::PI);
+    }
+
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
+        vec::random_in_unit_sphere(rng)
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// Sphere positioned at `center` with a `radius`.

@@ -8,13 +8,12 @@ use crate::traits::{hittable, renderable, sampleable, texturable};
 
 struct PhaseFunctionPDF;
 impl pdf::PDF for PhaseFunctionPDF {
-    fn sample(
-        &self,
-        _in_ray: &ray::Ray,
-        _hit_record: &hittable::HitRecord,
-        _out_ray: &ray::Ray,
-    ) -> f32 {
+    fn value(&self, _direction: vec::Vec3) -> f32 {
         1.0 / (4.0 * std::f32::consts::PI)
+    }
+
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
+        vec::random_in_unit_sphere(rng)
     }
 }
 

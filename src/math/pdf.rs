@@ -1,13 +1,7 @@
-use crate::core::ray;
-use crate::traits::hittable;
+use crate::math::vec;
 
 /// Probability Density Function trait
 pub trait PDF {
-    /// Sample a value from the PDF
-    fn sample(
-        &self,
-        in_ray: &ray::Ray,
-        hit_record: &hittable::HitRecord,
-        out_ray: &ray::Ray,
-    ) -> f32;
+    fn value(&self, direction: vec::Vec3) -> f32;
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3;
 }
