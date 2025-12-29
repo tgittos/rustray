@@ -214,8 +214,11 @@ pub(crate) fn raytrace_chunk(
 
                     let r = render.camera.get_ray(rng, u, v);
 
-                    if let Some(hit) = render.scene.hit(&r, 0.001, f32::MAX) {
-                        col = col + hit.renderable.sample(rng, &hit, &render.scene, max_depth);
+                    if let Some(hit_record) = render.scene.hit(&r, 0.001, f32::MAX) {
+                        col = col
+                            + hit_record
+                                .renderable
+                                .sample(rng, &hit_record, &render.scene, max_depth);
                     }
                 }
             }

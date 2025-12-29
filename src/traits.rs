@@ -22,6 +22,7 @@
 //! at a given hit record.
 
 pub mod hittable;
+pub mod scatterable;
 pub mod renderable;
 pub mod sampleable;
 pub mod texturable;

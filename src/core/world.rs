@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray, scene};
-use crate::math::vec;
+use crate::math::{vec, pdf};
 use crate::traits::{hittable, renderable, sampleable};
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
@@ -51,6 +51,10 @@ impl hittable::Hittable for World {
         )
     }
 
+    fn get_pdf(&self, _origin: &vec::Point3, _time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(pdf::uniform::UniformPDF {})
+    }
+
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -86,6 +90,7 @@ impl renderable::Renderable for World {
         let hit = maybe_hit.unwrap();
         let hit_record = hittable::HitRecord {
             hit: hit,
+            pdf: (self as &dyn hittable::Hittable).get_pdf(&hit.point, hit.ray.time),
             renderable: self,
         };
 
@@ -98,6 +103,14 @@ impl renderable::Renderable for World {
             vec::Vec3::new(-f32::MAX, -f32::MAX, -f32::MAX),
             vec::Vec3::new(f32::MAX, f32::MAX, f32::MAX),
         )
+    }
+
+    fn get_pdf(
+        &self,
+        origin: &vec::Point3,
+        time: f64,
+    ) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        (self as &dyn hittable::Hittable).get_pdf(origin, time)
     }
 
     fn sample(

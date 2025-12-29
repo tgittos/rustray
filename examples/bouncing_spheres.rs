@@ -15,10 +15,10 @@ fn main() {
     let mut args = std::env::args();
     let is_concurrent = args.next().map(|s| s == "--concurrent").unwrap_or(false);
 
-    let nx = 1200;
+    let nx = 800;
     let ar = 16.0 / 9.0;
     let ny = (nx as f32 / ar) as u32;
-    let ns = 500;
+    let ns = 1000;
     let max_depth = 50;
 
     // scene setup

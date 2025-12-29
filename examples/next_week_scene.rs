@@ -91,13 +91,17 @@ fn main() {
     }
 
     // Ceiling light
-    let light_quad = quad::Quad::new(
+    let light_quad = Arc::new(quad::Quad::new(
         vec::Vec3::new(123.0, 554.0, 147.0),
         vec::Vec3::new(300.0, 0.0, 0.0),
         vec::Vec3::new(0.0, 0.0, 265.0),
-    );
+    ));
     scene.add_object(Box::new(object::RenderObject {
-        geometry_instance: GeometryInstance::new(Arc::new(light_quad)),
+        geometry_instance: GeometryInstance::new(light_quad.clone()),
+        material_instance: MaterialInstance::new(light_mat.clone()),
+    }));
+    scene.add_light(Box::new(object::RenderObject {
+        geometry_instance: GeometryInstance::new(light_quad.clone()),
         material_instance: MaterialInstance::new(light_mat.clone()),
     }));
 

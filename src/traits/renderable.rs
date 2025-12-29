@@ -2,7 +2,7 @@
 use std::any::Any;
 
 use crate::core::{bbox, ray, scene};
-use crate::math::vec;
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
 
 /// Trait for objects that can be rendered in the scene.
@@ -21,6 +21,13 @@ pub trait Renderable: Any + Send + Sync {
 
     /// Returns the bounding box of the renderable object.
     fn bounding_box(&self) -> bbox::BBox;
+
+    /// Returns a probability density function for sampling directions toward the renderable object.
+    fn get_pdf(
+        &self,
+        origin: &vec::Point3,
+        time: f64,
+    ) -> Box<dyn pdf::PDF + Send + Sync + '_>;
 
     /// Samples the color contribution at the hit point.
     fn sample(

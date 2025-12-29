@@ -121,6 +121,7 @@ impl renderable::Renderable for RenderVolume {
                 u: 0.0,
                 v: 0.0,
             },
+            pdf: Box::new(PhaseFunctionPDF {}),
             renderable: self,
         };
 
@@ -129,6 +130,14 @@ impl renderable::Renderable for RenderVolume {
 
     fn bounding_box(&self) -> bbox::BBox {
         self.boundary.bounding_box()
+    }
+
+    fn get_pdf(
+        &self,
+        _origin: &vec::Point3,
+        _time: f64,
+    ) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(PhaseFunctionPDF {})
     }
 
     fn sample(

@@ -1,10 +1,76 @@
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray};
-use crate::math::vec;
+use crate::math::{vec, pdf};
 use crate::traits::hittable;
+use crate::traits::hittable::Hittable;
 
 use super::quad;
+
+pub struct CubePDF<'a> {
+    cube: &'a Cube,
+    origin: vec::Point3,
+    time: f64,
+}
+
+impl<'a> CubePDF<'a> {
+    pub fn new(cube: &'a Cube, origin: vec::Point3, time: f64) -> Self {
+        CubePDF {
+            cube,
+            origin,
+            time,
+        }
+    }
+}
+
+impl pdf::PDF for CubePDF<'_> {
+    fn value(&self, direction: vec::Vec3) -> f32 {
+        let ray = ray::Ray::new(&self.origin, &direction, Some(self.time));
+        let Some(hit) = self.cube.hit(&ray, 0.001, f32::MAX) else {
+            return 0.0;
+        };
+        let dims = self.cube.max - self.cube.min;
+        let area = 2.0
+            * (dims.x * dims.y + dims.x * dims.z + dims.y * dims.z);
+        let direction_len_sq = direction.squared_length();
+        if direction_len_sq <= f32::EPSILON {
+            return 0.0;
+        }
+        let distance_squared = hit.t * hit.t * direction_len_sq;
+        let cosine = (direction.dot(&hit.normal) / direction_len_sq.sqrt()).abs();
+        if cosine <= 0.0 {
+            return 0.0;
+        }
+        distance_squared / (cosine * area)
+    }
+
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
+        let mut areas = [0.0_f32; 6];
+        let mut total_area = 0.0_f32;
+        for (idx, face) in self.cube.faces.iter().enumerate() {
+            let area = face.u.cross(&face.v).length();
+            areas[idx] = area;
+            total_area += area;
+        }
+
+        let mut pick = rng.random::<f32>() * total_area;
+        let mut face_index = 0;
+        for (idx, area) in areas.iter().enumerate() {
+            if pick <= *area {
+                face_index = idx;
+                break;
+            }
+            pick -= area;
+        }
+
+        let face = &self.cube.faces[face_index];
+        let r1: f32 = rng.random::<f32>();
+        let r2: f32 = rng.random::<f32>();
+        let point = face.q + face.u * r1 + face.v * r2;
+        point - self.origin
+    }
+}
 
 /// Axis-aligned cube assembled from six quads.
 #[derive(Clone, Serialize)]
@@ -117,6 +183,10 @@ impl hittable::Hittable for Cube {
 
     fn bounding_box(&self) -> bbox::BBox {
         self.bbox
+    }
+
+    fn get_pdf(&self, origin: &vec::Point3, time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(CubePDF::new(self, *origin, time))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

@@ -56,6 +56,7 @@ impl Renderable for RenderObject {
         let hit = maybe_hit.unwrap();
         let hit_record = hittable::HitRecord {
             hit: hit,
+            pdf: self.geometry_instance.get_pdf(&hit.point, hit.ray.time),
             renderable: self,
         };
 
@@ -64,6 +65,14 @@ impl Renderable for RenderObject {
 
     fn bounding_box(&self) -> bbox::BBox {
         self.geometry_instance.bounding_box()
+    }
+
+    fn get_pdf(
+        &self,
+        origin: &vec::Point3,
+        time: f64,
+    ) -> Box<dyn crate::math::pdf::PDF + Send + Sync + '_> {
+        self.geometry_instance.get_pdf(origin, time)
     }
 
     fn sample(

@@ -1,9 +1,49 @@
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray};
-use crate::math::vec;
+use crate::math::{vec, pdf};
 use crate::traits::hittable;
+use crate::traits::hittable::Hittable;
 
+pub struct QuadPDF<'a> {
+    quad: &'a Quad,
+    origin: vec::Point3,
+    time: f64,
+}
+
+impl<'a> QuadPDF<'a> {
+    pub fn new(quad: &'a Quad, origin: vec::Point3, time: f64) -> Self {
+        QuadPDF { quad, origin, time }
+    }
+}
+
+impl pdf::PDF for QuadPDF<'_> {
+    fn value(&self, direction: vec::Vec3) -> f32 {
+        let ray = ray::Ray::new(&self.origin, &direction, Some(self.time));
+        let Some(hit) = self.quad.hit(&ray, 0.001, f32::MAX) else {
+            return 0.0;
+        };
+        let area = self.quad.u.cross(&self.quad.v).length();
+        let direction_len_sq = direction.squared_length();
+        if direction_len_sq <= f32::EPSILON {
+            return 0.0;
+        }
+        let distance_squared = hit.t * hit.t * direction_len_sq;
+        let cosine = (direction.dot(&hit.normal) / direction_len_sq.sqrt()).abs();
+        if cosine <= 0.0 {
+            return 0.0;
+        }
+        distance_squared / (cosine * area)
+    }
+
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
+        let r1: f32 = rng.random::<f32>();
+        let r2: f32 = rng.random::<f32>();
+        let point = self.quad.q + self.quad.u * r1 + self.quad.v * r2;
+        point - self.origin
+    }
+}
 #[derive(Serialize)]
 pub struct Quad {
     pub q: vec::Point3,
@@ -128,6 +168,10 @@ impl hittable::Hittable for Quad {
 
     fn bounding_box(&self) -> bbox::BBox {
         self.bbox
+    }
+
+    fn get_pdf(&self, origin: &vec::Point3, time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(QuadPDF::new(self, *origin, time))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

@@ -4,15 +4,36 @@ use serde::{Deserialize, Serialize};
 use crate::core::{bbox, ray};
 use crate::math::{pdf, vec};
 use crate::traits::hittable;
+use crate::traits::hittable::Hittable;
 
-struct SpherePDF;
-impl pdf::PDF for SpherePDF {
-    fn value(&self, _direction: vec::Vec3) -> f32 {
-        return 1.0 / (4.0 * std::f32::consts::PI);
+pub struct SpherePDF<'a> {
+    sphere: &'a Sphere,
+    origin: vec::Point3,
+    time: f64,
+}
+impl pdf::PDF for SpherePDF<'_> {
+    fn value(&self, direction: vec::Vec3) -> f32 {
+        let ray = ray::Ray::new(&self.origin, &direction, Some(self.time));
+        let Some(hit) = self.sphere.hit(&ray, 0.001, f32::MAX) else {
+            return 0.0;
+        };
+        let area = 4.0 * std::f32::consts::PI * self.sphere.radius * self.sphere.radius;
+        let direction_len_sq = direction.squared_length();
+        if direction_len_sq <= f32::EPSILON {
+            return 0.0;
+        }
+        let distance_squared = hit.t * hit.t * direction_len_sq;
+        let cosine = (direction.dot(&hit.normal) / direction_len_sq.sqrt()).abs();
+        if cosine <= 0.0 {
+            return 0.0;
+        }
+        distance_squared / (cosine * area)
     }
 
     fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
-        vec::random_in_unit_sphere(rng)
+        let unit = vec::unit_vector(&vec::random_in_unit_sphere(rng));
+        let point = self.sphere.center + unit * self.sphere.radius;
+        point - self.origin
     }
 }
 
@@ -74,6 +95,14 @@ impl hittable::Hittable for Sphere {
     fn bounding_box(&self) -> bbox::BBox {
         let radius_vec = vec::Vec3::new(self.radius, self.radius, self.radius);
         bbox::BBox::bounding(self.center - radius_vec, self.center + radius_vec)
+    }
+
+    fn get_pdf(&self, origin: &vec::Point3, time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(SpherePDF {
+            sphere: self,
+            origin: *origin,
+            time,
+        })
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

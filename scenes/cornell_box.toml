@@ -1,6 +1,6 @@
 width = 600
-samples = 10000
-depth = 100
+samples = 1000
+depth = 50
 volumes = []
 
 [camera]

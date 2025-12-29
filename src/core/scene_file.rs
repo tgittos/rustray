@@ -235,19 +235,44 @@ impl SceneFile {
                 return Err(SceneFileError::MissingMaterial(object.material));
             };
 
+            let albedo = object.albedo;
+            let transforms = object.transforms;
             let geometry_instance = GeometryInstance {
                 ref_obj: geometry.clone(),
-                transforms: object.transforms,
+                transforms: transforms.clone(),
             };
             let material_instance = MaterialInstance {
                 ref_mat: material.clone(),
-                albedo: object.albedo,
+                albedo,
             };
 
-            scene.add_object(Box::new(object::RenderObject {
+            let render_object = object::RenderObject {
                 geometry_instance,
                 material_instance,
-            }));
+            };
+            let is_emissive = render_object
+                .material_instance
+                .ref_mat
+                .as_any()
+                .downcast_ref::<diffuse_light::DiffuseLight>()
+                .is_some();
+
+            scene.add_object(Box::new(render_object));
+
+            if is_emissive {
+                let light_geometry = GeometryInstance {
+                    ref_obj: geometry.clone(),
+                    transforms,
+                };
+                let light_material = MaterialInstance {
+                    ref_mat: material.clone(),
+                    albedo,
+                };
+                scene.add_light(Box::new(object::RenderObject {
+                    geometry_instance: light_geometry,
+                    material_instance: light_material,
+                }));
+            }
         }
         for volume in self.volumes.into_iter() {
             let Some(geometry) = geometries.get(volume.boundary_geometry) else {

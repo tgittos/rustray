@@ -31,9 +31,8 @@ fn main() {
     let nx = 600;
     let ar = 1.0;
     let ny = (nx as f32 / ar) as u32;
-    //let ns = 1000;
     let ns = 1000;
-    let max_depth = 100;
+    let max_depth = 10;
 
     let camera_config = camera::CameraConfig {
         origin: vec::Vec3::new(278.0, 278.0, -800.0),
@@ -86,11 +85,11 @@ fn main() {
         vec::Vec3::new(-555.0, 0.0, 0.0),
         vec::Vec3::new(0.0, 555.0, 0.0),
     );
-    let ceiling_light = quad::Quad::new(
+    let ceiling_light = Arc::new(quad::Quad::new(
         vec::Vec3::new(213.0, 554.0, 227.0),
         vec::Vec3::new(130.0, 0.0, 0.0),
         vec::Vec3::new(0.0, 0.0, 105.0),
-    );
+    ));
 
     scene.add_object(Box::new(object::RenderObject {
         geometry_instance: GeometryInstance::new(Arc::new(left_wall)),
@@ -113,7 +112,11 @@ fn main() {
         material_instance: MaterialInstance::new(white.clone()),
     }));
     scene.add_object(Box::new(object::RenderObject {
-        geometry_instance: GeometryInstance::new(Arc::new(ceiling_light)),
+        geometry_instance: GeometryInstance::new(ceiling_light.clone()),
+        material_instance: MaterialInstance::new(light.clone()),
+    }));
+    scene.add_light(Box::new(object::RenderObject {
+        geometry_instance: GeometryInstance::new(ceiling_light.clone()),
         material_instance: MaterialInstance::new(light.clone()),
     }));
 

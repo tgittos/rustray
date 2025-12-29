@@ -2,7 +2,7 @@
 use std::any::Any;
 
 use crate::core::{bbox, ray};
-use crate::math::vec;
+use crate::math::{vec, pdf};
 use crate::traits::renderable;
 
 /// Information about a ray-object intersection.
@@ -32,18 +32,31 @@ pub trait Hittable: Any + Send + Sync {
     /// Returns the bounding box of the object.
     fn bounding_box(&self) -> bbox::BBox;
 
+    /// Returns a probability density function for sampling directions toward the object.
+    fn get_pdf(
+        &self,
+        origin: &vec::Point3,
+        time: f64,
+    ) -> Box<dyn pdf::PDF + Send + Sync + '_>;
+
+    /// Allows downcasting to concrete types.
     fn as_any(&self) -> &dyn Any;
 }
 
 /// A record of a hit, associating the hit information with the renderable object.
 pub struct HitRecord<'a> {
     pub hit: Hit,
+    pub pdf: Box<dyn pdf::PDF + Send + Sync + 'a>,
     pub renderable: &'a dyn renderable::Renderable,
 }
 
 impl<'a> HitRecord<'a> {
     /// Creates a new HitRecord.
-    pub fn new<T: renderable::Renderable>(hit: Hit, renderable: &'a T) -> Self {
-        HitRecord { hit, renderable }
+    pub fn new(
+        hit: Hit,
+        pdf: Box<dyn pdf::PDF + Send + Sync + 'a>,
+        renderable: &'a dyn renderable::Renderable,
+    ) -> Self {
+        HitRecord { hit, pdf, renderable }
     }
 }
