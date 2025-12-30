@@ -6,17 +6,18 @@ pub mod core;
 pub mod geometry;
 pub mod materials;
 pub mod math;
-pub mod stats;
 pub mod textures;
 pub mod traits;
+pub mod stats;
 
 use rand::Rng;
 use rayon::prelude::*;
 use std::time;
 
+use crate::core::ray;
 use crate::core::render;
+use crate::core::scene;
 use crate::math::vec;
-use crate::stats::tracker;
 use crate::traits::renderable::Renderable;
 
 #[derive(Clone, Copy)]
@@ -60,7 +61,6 @@ pub(crate) fn image_height(render: &render::Render) -> u32 {
 /// A flat RGB buffer in row-major order with gamma correction applied.
 pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec<u8> {
     let height = image_height(render);
-    tracker::reset();
     let render_start = time::Instant::now();
 
     let full_frame = ChunkBounds {
@@ -73,15 +73,14 @@ pub fn raytrace(rng: &mut rand::rngs::ThreadRng, render: &render::Render) -> Vec
     let image_data = assemble_chunks(&[chunk], render.width, height);
 
     let wall_time = render_start.elapsed();
-    let stats = tracker::get_stats();
-    print_stats(&stats, wall_time);
+
+    println!("Wall time: {}", format_duration(wall_time));
 
     image_data
 }
 
 pub fn raytrace_concurrent(render: &render::Render) -> Vec<u8> {
     let height = image_height(render);
-    tracker::reset();
     let render_start = time::Instant::now();
 
     let num_threads = num_cpus::get();
@@ -111,81 +110,10 @@ pub fn raytrace_concurrent(render: &render::Render) -> Vec<u8> {
     let image_data = assemble_chunks(&chunk_outputs, render.width, height);
 
     let wall_time = render_start.elapsed();
-    let stats = tracker::get_stats();
-    print_stats(&stats, wall_time);
+
+    println!("Wall time: {}", format_duration(wall_time));
+
     image_data
-}
-
-fn format_duration(dur: time::Duration) -> String {
-    let hours = dur.as_secs() / 3600;
-    let minutes = (dur.as_secs() % 3600) / 60;
-    let seconds = dur.as_secs() % 60;
-    let millis = dur.subsec_millis();
-    format!("{}h {}m {}s {}ms", hours, minutes, seconds, millis)
-}
-
-fn div_duration(dur: time::Duration, divisor: usize) -> time::Duration {
-    if divisor == 0 {
-        return dur;
-    }
-    let nanos = dur.as_nanos() / divisor as u128;
-    let clamped = nanos.min(u64::MAX as u128) as u64;
-    time::Duration::from_nanos(clamped)
-}
-
-fn print_stats(stats: &tracker::StatsSnapshot, wall_time: time::Duration) {
-    println!("Rendering Stats:");
-    println!("--------------------------");
-    println!("Total Hits: {}", stats.total_hits());
-    println!("Total Samples: {}", stats.total_samples());
-    vec![
-        tracker::SCENE_HIT,
-        tracker::LAMBERTIAN_HIT,
-        tracker::LAMBERTIAN_SAMPLE,
-        tracker::METALLIC_HIT,
-        tracker::METALLIC_SAMPLE,
-        tracker::DIELECTRIC_HIT,
-        tracker::DIELECTRIC_SAMPLE,
-        tracker::DIFFUSE_LIGHT_SAMPLE,
-    ]
-    .iter()
-    .for_each(|stat_name| {
-        println!(
-            "Stat: {}\n  P50: {:?}\n  P90: {:?}\n  P99: {:?}\n",
-            stat_name,
-            stats.p50_by_name(stat_name),
-            stats.p90_by_name(stat_name),
-            stats.p99_by_name(stat_name)
-        );
-    });
-
-    let threads = stats.threads_used.max(1);
-    let cpu_hit_time = stats.total_hit_time();
-    let cpu_sample_time = stats.total_sample_time();
-    let cpu_total = cpu_hit_time + cpu_sample_time;
-
-    let thread_label = if threads == 1 { "thread" } else { "threads" };
-    println!(
-        "CPU Hit Time (avg over {} {}): {}",
-        threads,
-        thread_label,
-        format_duration(div_duration(cpu_hit_time, threads))
-    );
-    println!(
-        "CPU Sample Time (avg over {} {}): {}",
-        threads,
-        thread_label,
-        format_duration(div_duration(cpu_sample_time, threads))
-    );
-    println!(
-        "CPU Total Time (avg over {} {}): {}",
-        threads,
-        thread_label,
-        format_duration(div_duration(cpu_total, threads))
-    );
-    println!("--------------------------");
-    println!("Render Wall Time: {}", format_duration(wall_time));
-    println!("--------------------------");
 }
 
 pub(crate) fn raytrace_chunk(
@@ -213,13 +141,7 @@ pub(crate) fn raytrace_chunk(
                     let v = (y as f32 + (j as f32 + rng.random::<f32>()) * recip_sqrt_n) / height;
 
                     let r = render.camera.get_ray(rng, u, v);
-
-                    if let Some(hit_record) = render.scene.hit(&r, 0.001, f32::MAX) {
-                        col = col
-                            + hit_record
-                                .renderable
-                                .sample(rng, &hit_record, &render.scene, max_depth);
-                    }
+                    col = col + trace_ray(rng, &render.scene, &r, max_depth);
                 }
             }
 
@@ -233,6 +155,79 @@ pub(crate) fn raytrace_chunk(
     }
 
     ChunkOutput { bounds, data }
+}
+
+fn trace_ray(
+    rng: &mut rand::rngs::ThreadRng,
+    scene: &scene::Scene,
+    ray: &ray::Ray,
+    max_depth: u32,
+) -> vec::Vec3 {
+    let mut current_ray = *ray;
+    let mut throughput = vec::Vec3::new(1.0, 1.0, 1.0);
+    let mut radiance = vec::Vec3::new(0.0, 0.0, 0.0);
+    let mut remaining_depth = max_depth;
+
+    loop {
+        let maybe_hit = scene.hit(&current_ray, 0.001, f32::MAX);
+
+        let Some(hit_record) = maybe_hit else {
+            break;
+        };
+
+        let emitted = hit_record.renderable.emit(&hit_record);
+        let scatter_record = if remaining_depth > 0 {
+            hit_record
+                .renderable
+                .scatter(rng, &hit_record, remaining_depth)
+        } else {
+            None
+        };
+
+        radiance = radiance + throughput * emitted;
+
+        let Some(scatter_record) = scatter_record else {
+            break;
+        };
+
+        remaining_depth = remaining_depth.saturating_sub(1);
+
+        if let Some(specular_ray) = scatter_record.scattered_ray {
+            throughput = throughput * scatter_record.attenuation;
+            current_ray = specular_ray;
+            continue;
+        }
+
+        let Some(scatter_pdf) = scatter_record.scatter_pdf.as_ref() else {
+            break;
+        };
+
+        let scatter_direction = if scatter_record.use_light_pdf {
+            hit_record.pdf.generate(rng)
+        } else {
+            scatter_pdf.generate(rng)
+        };
+        let scattered_ray = ray::Ray::new(
+            &hit_record.hit.point,
+            &scatter_direction,
+            Some(hit_record.hit.ray.time),
+        );
+
+        let pdf_value = if scatter_record.use_light_pdf {
+            hit_record.pdf.value(scattered_ray.direction)
+        } else {
+            scatter_pdf.value(scattered_ray.direction)
+        };
+        if pdf_value <= 0.0 {
+            break;
+        }
+
+        let scattering_pdf = scatter_pdf.value(scattered_ray.direction);
+        throughput = throughput * scatter_record.attenuation * scattering_pdf / pdf_value;
+        current_ray = scattered_ray;
+    }
+
+    radiance
 }
 
 pub(crate) fn assemble_chunks(chunks: &[ChunkOutput], width: u32, height: u32) -> Vec<u8> {
@@ -253,4 +248,12 @@ pub(crate) fn assemble_chunks(chunks: &[ChunkOutput], width: u32, height: u32) -
     }
 
     image
+}
+
+fn format_duration(dur: time::Duration) -> String {
+    let hours = dur.as_secs() / 3600;
+    let minutes = (dur.as_secs() % 3600) / 60;
+    let seconds = dur.as_secs() % 60;
+    let millis = dur.subsec_millis();
+    format!("{}h {}m {}s {}ms", hours, minutes, seconds, millis)
 }

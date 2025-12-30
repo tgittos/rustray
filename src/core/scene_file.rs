@@ -14,7 +14,7 @@ use crate::materials::{
 };
 use crate::math::vec;
 use crate::textures::{checker, color, noise, uv};
-use crate::traits::{hittable, sampleable, texturable};
+use crate::traits::{hittable, scatterable, texturable};
 
 #[derive(Serialize, Deserialize)]
 pub struct SceneFile {
@@ -223,7 +223,7 @@ impl SceneFile {
         let materials: Vec<_> = self
             .materials
             .iter()
-            .map(|entry| entry.material.to_sampleable())
+            .map(|entry| entry.material.to_scatterable())
             .collect::<Result<_, _>>()?;
 
         let mut scene = scene::Scene::new();
@@ -350,7 +350,7 @@ impl RegistryBuilder {
 
     fn register_material(
         &mut self,
-        material: &std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
+        material: &std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>,
     ) -> Result<usize, SceneFileError> {
         let key = arc_key(material);
         if let Some(existing) = self.material_ids.get(&key) {
@@ -359,7 +359,7 @@ impl RegistryBuilder {
 
         let entry = MaterialEntry {
             id: self.materials.len(),
-            material: MaterialTemplate::from_sampleable(material)?,
+            material: MaterialTemplate::from_scatterable(material)?,
         };
         self.material_ids.insert(key, entry.id);
         self.materials.push(entry);
@@ -405,8 +405,8 @@ impl GeometryTemplate {
 }
 
 impl MaterialTemplate {
-    fn from_sampleable(
-        material: &std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
+    fn from_scatterable(
+        material: &std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>,
     ) -> Result<Self, SceneFileError> {
         if let Some(lambert) = material.as_any().downcast_ref::<lambertian::Lambertian>() {
             return Ok(MaterialTemplate::Lambertian {
@@ -441,10 +441,10 @@ impl MaterialTemplate {
         ))
     }
 
-    fn to_sampleable(
+    fn to_scatterable(
         &self,
-    ) -> Result<std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>, SceneFileError> {
-        let material: std::sync::Arc<dyn sampleable::Sampleable + Send + Sync> = match self {
+    ) -> Result<std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>, SceneFileError> {
+        let material: std::sync::Arc<dyn scatterable::Scatterable + Send + Sync> = match self {
             MaterialTemplate::Lambertian { texture } => {
                 std::sync::Arc::new(lambertian::Lambertian::new(texture.to_texturable()?))
             }
@@ -452,14 +452,14 @@ impl MaterialTemplate {
                 std::sync::Arc::new(volume::Isotropic::new(texture.to_texturable()?))
             }
             MaterialTemplate::Metallic(metal) => std::sync::Arc::new(metal.clone())
-                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
+                as std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>,
             MaterialTemplate::Dielectric(dielectric) => std::sync::Arc::new(dielectric.clone())
-                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
+                as std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>,
             MaterialTemplate::DiffuseLight { texture } => {
                 std::sync::Arc::new(diffuse_light::DiffuseLight::new(texture.to_texturable()?))
             }
             MaterialTemplate::World(world) => std::sync::Arc::new(*world)
-                as std::sync::Arc<dyn sampleable::Sampleable + Send + Sync>,
+                as std::sync::Arc<dyn scatterable::Scatterable + Send + Sync>,
         };
 
         Ok(material)

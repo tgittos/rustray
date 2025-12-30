@@ -1,14 +1,11 @@
 //! Transparent material that refracts and reflects based on a refractive index.
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::time;
 
-use crate::core::{ray, scene};
+use crate::core::ray;
 use crate::math::vec;
-use crate::stats::tracker;
 use crate::traits::hittable;
-use crate::traits::renderable::Renderable;
-use crate::traits::sampleable::Sampleable;
+use crate::traits::scatterable::{ScatterRecord, Scatterable};
 
 /// Glass-like dielectric material with a configurable refractive index.
 #[derive(Clone, Serialize, Deserialize)]
@@ -23,14 +20,13 @@ impl Dielectric {
     }
 }
 
-impl Sampleable for Dielectric {
-    fn sample(
+impl Scatterable for Dielectric {
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
+    ) -> Option<ScatterRecord> {
         let hit = hit_record.hit;
         let unit_direction = vec::unit_vector(&hit.ray.direction);
 
@@ -65,41 +61,21 @@ impl Sampleable for Dielectric {
         let attenuation = vec::Vec3::new(1.0, 1.0, 1.0);
 
         if depth == 0 {
-            return vec::Vec3::new(0.0, 0.0, 0.0);
+            return None;
         }
 
-        let sample_start = time::Instant::now();
-        let hit_start = time::Instant::now();
-        let maybe_hit = scene.hit(
-            &ray::Ray::new(&hit.point, &scatter_direction, Some(hit.ray.time)),
-            0.001,
-            f32::MAX,
-        );
-        let hit_elapsed = hit_start.elapsed();
-        tracker::add_hit_stat(tracker::Stat::new(tracker::DIELECTRIC_HIT, hit_elapsed));
+        let scattered_ray = ray::Ray::new(&hit.point, &scatter_direction, Some(hit.ray.time));
 
-        if let Some(new_hit_record) = maybe_hit {
-            let bounce_start = time::Instant::now();
-            let bounce = new_hit_record
-                .renderable
-                .sample(rng, &new_hit_record, scene, depth - 1);
-            let bounce_elapsed = bounce_start.elapsed();
+        Some(ScatterRecord {
+            attenuation,
+            scatter_pdf: None,
+            scattered_ray: Some(scattered_ray),
+            use_light_pdf: false,
+        })
+    }
 
-            tracker::add_sample_stat(tracker::Stat::new(
-                tracker::DIELECTRIC_SAMPLE,
-                sample_start
-                    .elapsed()
-                    .saturating_sub(hit_elapsed + bounce_elapsed),
-            ));
-
-            attenuation * bounce
-        } else {
-            tracker::add_sample_stat(tracker::Stat::new(
-                tracker::DIELECTRIC_SAMPLE,
-                sample_start.elapsed().saturating_sub(hit_elapsed),
-            ));
-            vec::Vec3::new(0.0, 0.0, 0.0)
-        }
+    fn emit(&self, _hit_record: &hittable::HitRecord) -> vec::Vec3 {
+        vec::Vec3::new(0.0, 0.0, 0.0)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

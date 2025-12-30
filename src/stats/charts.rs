@@ -10,8 +10,6 @@ use std::time;
 pub fn chart(
     filename: &str,
     sample_labels: &Vec<&str>,
-    hit_ts: &Vec<time::Duration>,
-    sample_ts: &Vec<time::Duration>,
     total_ts: &Vec<time::Duration>,
     is_concurrent: bool,
 ) -> std::io::Result<()> {
@@ -39,16 +37,6 @@ pub fn chart(
             Axis::new()
                 .type_(AxisType::Category)
                 .data(sample_labels.clone()),
-        )
-        .series(
-            Bar::new()
-                .name("Hit Time (s)")
-                .data(hit_ts.iter().map(|t| t.as_secs() as i32).collect()),
-        )
-        .series(
-            Bar::new()
-                .name("Sample Time (s)")
-                .data(sample_ts.iter().map(|t| t.as_secs() as i32).collect()),
         )
         .series(
             Bar::new()

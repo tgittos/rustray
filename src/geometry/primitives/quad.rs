@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray};
-use crate::math::{vec, pdf};
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
 use crate::traits::hittable::Hittable;
 

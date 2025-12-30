@@ -1,21 +1,9 @@
 use rand::Rng;
 use std::sync::Arc;
 
-use crate::core::{bbox, ray, scene};
+use crate::core::{bbox, ray};
 use crate::math::{pdf, vec};
-use crate::traits::renderable::Renderable;
-use crate::traits::{hittable, renderable, sampleable, texturable};
-
-struct PhaseFunctionPDF;
-impl pdf::PDF for PhaseFunctionPDF {
-    fn value(&self, _direction: vec::Vec3) -> f32 {
-        1.0 / (4.0 * std::f32::consts::PI)
-    }
-
-    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
-        vec::random_in_unit_sphere(rng)
-    }
-}
+use crate::traits::{hittable, renderable, scatterable, texturable};
 
 pub struct Isotropic {
     pub texture: Box<dyn texturable::Texturable + Send + Sync>,
@@ -26,37 +14,31 @@ impl Isotropic {
     pub fn new(texture: Box<dyn texturable::Texturable + Send + Sync>) -> Self {
         Self {
             texture,
-            pdf: Box::new(PhaseFunctionPDF {}),
+            pdf: Box::new(pdf::phase::ConstantPhaseFunction {}),
         }
     }
 }
 
-impl sampleable::Sampleable for Isotropic {
-    fn sample(
+impl scatterable::Scatterable for Isotropic {
+    fn scatter(
         &self,
-        rng: &mut rand::rngs::ThreadRng,
+        _rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
+    ) -> Option<scatterable::ScatterRecord> {
         if depth == 0 {
-            return vec::Vec3::new(0.0, 0.0, 0.0);
+            return None;
         }
 
-        let scattered = ray::Ray::new(
-            &hit_record.hit.point,
-            &vec::random_in_unit_sphere(rng),
-            Some(hit_record.hit.ray.time),
-        );
+        Some(scatterable::ScatterRecord {
+            attenuation: self.texture.sample(&hit_record.hit),
+            scatter_pdf: Some(Box::new(pdf::phase::ConstantPhaseFunction {})),
+            scattered_ray: None,
+            use_light_pdf: false,
+        })
+    }
 
-        if let Some(new_hit_record) = scene.hit(&scattered, 0.001, f32::MAX) {
-            let bounce = new_hit_record
-                .renderable
-                .sample(rng, &new_hit_record, scene, depth - 1);
-
-            return self.texture.sample(&hit_record.hit) * bounce;
-        }
-
+    fn emit(&self, _hit_record: &hittable::HitRecord) -> vec::Vec3 {
         vec::Vec3::new(0.0, 0.0, 0.0)
     }
 
@@ -68,14 +50,14 @@ impl sampleable::Sampleable for Isotropic {
 pub struct RenderVolume {
     pub boundary: Box<dyn hittable::Hittable + Send + Sync>,
     pub density: f32,
-    pub phase_function: Arc<dyn sampleable::Sampleable + Send + Sync>,
+    pub phase_function: Arc<dyn scatterable::Scatterable + Send + Sync>,
 }
 
 impl RenderVolume {
     pub fn new(
         boundary: Box<dyn hittable::Hittable + Send + Sync>,
         density: f32,
-        phase_function: Arc<dyn sampleable::Sampleable + Send + Sync>,
+        phase_function: Arc<dyn scatterable::Scatterable + Send + Sync>,
     ) -> Self {
         RenderVolume {
             boundary,
@@ -121,7 +103,7 @@ impl renderable::Renderable for RenderVolume {
                 u: 0.0,
                 v: 0.0,
             },
-            pdf: Box::new(PhaseFunctionPDF {}),
+            pdf: Box::new(pdf::phase::ConstantPhaseFunction {}),
             renderable: self,
         };
 
@@ -132,22 +114,21 @@ impl renderable::Renderable for RenderVolume {
         self.boundary.bounding_box()
     }
 
-    fn get_pdf(
-        &self,
-        _origin: &vec::Point3,
-        _time: f64,
-    ) -> Box<dyn pdf::PDF + Send + Sync + '_> {
-        Box::new(PhaseFunctionPDF {})
+    fn get_pdf(&self, _origin: &vec::Point3, _time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+        Box::new(pdf::phase::ConstantPhaseFunction {})
     }
 
-    fn sample(
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
-        self.phase_function.sample(rng, hit_record, scene, depth)
+    ) -> Option<scatterable::ScatterRecord> {
+        self.phase_function.scatter(rng, hit_record, depth)
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord) -> vec::Vec3 {
+        self.phase_function.emit(hit_record)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

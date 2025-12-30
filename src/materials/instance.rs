@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
 use crate::math::vec;
-use crate::traits::sampleable::Sampleable;
+use crate::traits::scatterable::{ScatterRecord, Scatterable};
 
 pub struct MaterialInstance {
-    pub ref_mat: Arc<dyn Sampleable + Send + Sync>,
+    pub ref_mat: Arc<dyn Scatterable + Send + Sync>,
     pub albedo: Option<vec::Vec3>,
 }
 
 impl MaterialInstance {
-    pub fn new(mat: Arc<dyn Sampleable + Send + Sync>) -> Self {
+    pub fn new(mat: Arc<dyn Scatterable + Send + Sync>) -> Self {
         Self {
             ref_mat: mat,
             albedo: None,
@@ -22,16 +22,21 @@ impl MaterialInstance {
     }
 }
 
-impl Sampleable for MaterialInstance {
-    fn sample(
+impl Scatterable for MaterialInstance {
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &crate::traits::hittable::HitRecord,
-        scene: &crate::core::scene::Scene,
         depth: u32,
-    ) -> crate::math::vec::Vec3 {
-        self.ref_mat.sample(rng, hit_record, scene, depth)
-            * self.albedo.unwrap_or(vec::Vec3::new(1.0, 1.0, 1.0))
+    ) -> Option<ScatterRecord> {
+        let mut scatter_record = self.ref_mat.scatter(rng, hit_record, depth)?;
+        let tint = self.albedo.unwrap_or(vec::Vec3::new(1.0, 1.0, 1.0));
+        scatter_record.attenuation = scatter_record.attenuation * tint;
+        Some(scatter_record)
+    }
+
+    fn emit(&self, hit_record: &crate::traits::hittable::HitRecord) -> vec::Vec3 {
+        self.ref_mat.emit(hit_record) * self.albedo.unwrap_or(vec::Vec3::new(1.0, 1.0, 1.0))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

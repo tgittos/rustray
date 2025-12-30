@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{bbox, ray};
-use crate::math::{vec, pdf};
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
 use crate::traits::hittable::Hittable;
 
@@ -16,11 +16,7 @@ pub struct CubePDF<'a> {
 
 impl<'a> CubePDF<'a> {
     pub fn new(cube: &'a Cube, origin: vec::Point3, time: f64) -> Self {
-        CubePDF {
-            cube,
-            origin,
-            time,
-        }
+        CubePDF { cube, origin, time }
     }
 }
 
@@ -31,8 +27,7 @@ impl pdf::PDF for CubePDF<'_> {
             return 0.0;
         };
         let dims = self.cube.max - self.cube.min;
-        let area = 2.0
-            * (dims.x * dims.y + dims.x * dims.z + dims.y * dims.z);
+        let area = 2.0 * (dims.x * dims.y + dims.x * dims.z + dims.y * dims.z);
         let direction_len_sq = direction.squared_length();
         if direction_len_sq <= f32::EPSILON {
             return 0.0;

@@ -1,9 +1,9 @@
-//! Glue trait combining geometry (hittable) and material sampling.
+//! Glue trait combining geometry (hittable) and material scattering.
 use std::any::Any;
 
-use crate::core::{bbox, ray, scene};
+use crate::core::{bbox, ray};
 use crate::math::{pdf, vec};
-use crate::traits::hittable;
+use crate::traits::{hittable, scatterable};
 
 /// Trait for objects that can be rendered in the scene.
 pub trait Renderable: Any + Send + Sync {
@@ -23,20 +23,18 @@ pub trait Renderable: Any + Send + Sync {
     fn bounding_box(&self) -> bbox::BBox;
 
     /// Returns a probability density function for sampling directions toward the renderable object.
-    fn get_pdf(
-        &self,
-        origin: &vec::Point3,
-        time: f64,
-    ) -> Box<dyn pdf::PDF + Send + Sync + '_>;
+    fn get_pdf(&self, origin: &vec::Point3, time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_>;
 
-    /// Samples the color contribution at the hit point.
-    fn sample(
+    /// Produces a scatter record for the hit point.
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3;
+    ) -> Option<scatterable::ScatterRecord>;
+
+    /// Returns emitted radiance at the hit point.
+    fn emit(&self, hit_record: &hittable::HitRecord) -> vec::Vec3;
 
     fn as_any(&self) -> &dyn Any;
 }

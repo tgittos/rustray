@@ -1,10 +1,8 @@
 use rand::rngs;
-use std::time;
 
-use crate::core::scene;
 use crate::math::vec;
-use crate::stats::tracker;
-use crate::traits::{hittable, sampleable, texturable};
+use crate::traits::scatterable::{ScatterRecord, Scatterable};
+use crate::traits::{hittable, texturable};
 
 pub struct DiffuseLight {
     pub texture: Box<dyn texturable::Texturable + Send + Sync>,
@@ -16,21 +14,18 @@ impl DiffuseLight {
     }
 }
 
-impl sampleable::Sampleable for DiffuseLight {
-    fn sample(
+impl Scatterable for DiffuseLight {
+    fn scatter(
         &self,
         _rng: &mut rngs::ThreadRng,
-        hit_record: &hittable::HitRecord,
-        _scene: &scene::Scene,
+        _hit_record: &hittable::HitRecord,
         _depth: u32,
-    ) -> vec::Vec3 {
-        let sample_start = time::Instant::now();
-        let result = self.texture.sample(&hit_record.hit);
-        tracker::add_sample_stat(tracker::Stat::new(
-            tracker::DIFFUSE_LIGHT_SAMPLE,
-            sample_start.elapsed(),
-        ));
-        result
+    ) -> Option<ScatterRecord> {
+        None
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord) -> vec::Vec3 {
+        self.texture.sample(&hit_record.hit)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

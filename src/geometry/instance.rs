@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use crate::core::{bbox, ray};
-use crate::math::{pdf, vec};
 use crate::geometry::transform;
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
 
 pub struct GeometryInstance {
@@ -80,13 +80,9 @@ impl<'a> GeometryInstancePDF<'a> {
 
     fn to_local(&self, point: &vec::Point3) -> vec::Point3 {
         let mut ray = ray::Ray::new(point, &vec::Vec3::new(0.0, 0.0, 0.0), Some(self.time));
-        self.instance
-            .transforms
-            .iter()
-            .rev()
-            .for_each(|transform| {
-                ray = transform.apply_inverse(&ray);
-            });
+        self.instance.transforms.iter().rev().for_each(|transform| {
+            ray = transform.apply_inverse(&ray);
+        });
         ray.origin
     }
 

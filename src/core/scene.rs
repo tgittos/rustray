@@ -1,10 +1,9 @@
 //! Scene container that stores renderable objects and routes ray intersections.
-use std::{path::Path, time};
+use std::path::Path;
 
 use crate::core::{bvh, object, ray, render};
 use crate::math::{pdf, vec};
-use crate::stats::tracker;
-use crate::traits::{hittable, renderable};
+use crate::traits::{hittable, renderable, scatterable};
 
 /// Collection of renderable objects making up the world.
 pub struct Scene {
@@ -42,7 +41,10 @@ impl Scene {
         self.bvh = Some(bvh::Bvh::new(rng, &self.renderables.objects));
     }
 
-    fn apply_light_pdf<'a>(&'a self, hit_record: hittable::HitRecord<'a>) -> hittable::HitRecord<'a> {
+    fn apply_light_pdf<'a>(
+        &'a self,
+        hit_record: hittable::HitRecord<'a>,
+    ) -> hittable::HitRecord<'a> {
         let mut mixed_pdf = pdf::MixturePDF::new();
         if hit_record.hit.normal.squared_length() <= f32::EPSILON {
             mixed_pdf.add(Box::new(pdf::uniform::UniformPDF {}), 1.0);
@@ -92,10 +94,7 @@ impl renderable::Renderable for Scene {
         }
 
         for object in self.renderables.objects.iter() {
-            let hit_start = time::Instant::now();
             if let Some(temp_record) = object.hit(ray, t_min, closest_so_far) {
-                tracker::add_hit_stat(tracker::Stat::new(tracker::SCENE_HIT, hit_start.elapsed()));
-
                 closest_so_far = temp_record.hit.t;
                 hit_record = Some(temp_record);
             }
@@ -114,29 +113,23 @@ impl renderable::Renderable for Scene {
         }
     }
 
-    fn get_pdf(
-        &self,
-        _origin: &vec::Point3,
-        _time: f64,
-    ) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+    fn get_pdf(&self, _origin: &vec::Point3, _time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
         Box::new(pdf::uniform::UniformPDF {})
     }
 
-    /// Delegates sampling to the material bound to the hit object.
-    fn sample(
+    /// Delegates scattering to the material bound to the hit object.
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord<'_>,
-        scene: &Scene,
         depth: u32,
-    ) -> vec::Vec3 {
-        let sample_start = time::Instant::now();
-        let result = hit_record.renderable.sample(rng, hit_record, scene, depth);
-        tracker::add_sample_stat(tracker::Stat::new(
-            tracker::SCENE_SAMPLE,
-            sample_start.elapsed(),
-        ));
+    ) -> Option<scatterable::ScatterRecord> {
+        let result = hit_record.renderable.scatter(rng, hit_record, depth);
         result
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord<'_>) -> vec::Vec3 {
+        hit_record.renderable.emit(hit_record)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

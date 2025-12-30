@@ -1,31 +1,29 @@
 use std::any::Any;
 
 use crate::core::ray;
-use crate::math::{vec, pdf};
+use crate::math::{pdf, vec};
 use crate::traits::hittable;
 
-pub struct ScatterRecord<'a> {
+pub struct ScatterRecord {
     /// The color contribution from this scatter.
     pub attenuation: vec::Vec3,
-    /// The PDF used for sampling the scattered direction.
-    pub scatter_pdf: &'a dyn pdf::PDF,
-    /// The scattered ray to use if ignoring the PDF sampling.
+    /// The PDF used for sampling or evaluating the scattered direction.
+    pub scatter_pdf: Option<Box<dyn pdf::PDF + Send + Sync>>,
+    /// The scattered ray for delta/specular events.
     pub scattered_ray: Option<ray::Ray>,
+    /// Whether to sample from the scene-provided PDF (e.g. light mixing).
+    pub use_light_pdf: bool,
 }
 
-pub trait Scatterable {
+pub trait Scatterable: Any + Send + Sync {
     fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
-        hit: &hittable::Hit,
+        hit_record: &hittable::HitRecord,
         depth: u32,
-    ) -> Option<ScatterRecord<'_>>;
+    ) -> Option<ScatterRecord>;
 
-    fn emit(
-        &self,
-        rng: &mut rand::rngs::ThreadRng,
-        scatter_record: &ScatterRecord,
-    ) -> vec::Vec3;
+    fn emit(&self, hit_record: &hittable::HitRecord) -> vec::Vec3;
 
     fn as_any(&self) -> &dyn Any;
 }

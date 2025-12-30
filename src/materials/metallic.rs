@@ -1,13 +1,10 @@
 //! Reflective metallic material with optional roughness for blurred reflections.
 use serde::{Deserialize, Serialize};
-use std::time;
 
-use crate::core::{ray, scene};
+use crate::core::ray;
 use crate::math::vec;
-use crate::stats::tracker;
 use crate::traits::hittable;
-use crate::traits::renderable::Renderable;
-use crate::traits::sampleable;
+use crate::traits::scatterable::{ScatterRecord, Scatterable};
 
 /// Mirror-like surface with an albedo tint and surface roughness.
 #[derive(Clone, Serialize, Deserialize)]
@@ -26,58 +23,36 @@ impl Metallic {
     }
 }
 
-impl sampleable::Sampleable for Metallic {
+impl Scatterable for Metallic {
     /// Samples a specular reflection with optional fuzziness.
-    fn sample(
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
+    ) -> Option<ScatterRecord> {
         if depth == 0 {
-            return vec::Vec3::new(0.0, 0.0, 0.0);
+            return None;
         }
 
-        let sample_start = time::Instant::now();
         let hit = hit_record.hit;
         let reflected = vec::reflect(&vec::unit_vector(&hit.ray.direction), &hit.normal);
-        let scattered = ray::Ray::new(
+        let scattered_ray = ray::Ray::new(
             &hit.point,
             &(reflected + vec::random_in_unit_sphere(rng) * self.roughness),
             Some(hit.ray.time),
         );
 
-        let mut new_hit_record: Option<hittable::HitRecord> = None;
+        Some(ScatterRecord {
+            attenuation: self.albedo,
+            scatter_pdf: None,
+            scattered_ray: Some(scattered_ray),
+            use_light_pdf: false,
+        })
+    }
 
-        let hit_start = time::Instant::now();
-        if let Some(record) = scene.hit(&scattered, 0.001, f32::MAX) {
-            new_hit_record = Some(record);
-        }
-        let hit_elapsed = hit_start.elapsed();
-        tracker::add_hit_stat(tracker::Stat::new(tracker::METALLIC_HIT, hit_elapsed));
-
-        let Some(new_hit_record) = new_hit_record else {
-            tracker::add_sample_stat(tracker::Stat::new(
-                tracker::METALLIC_SAMPLE,
-                sample_start.elapsed().saturating_sub(hit_elapsed),
-            ));
-            return vec::Vec3::new(0.0, 0.0, 0.0);
-        };
-        let bounce_start = time::Instant::now();
-        let bounce = new_hit_record
-            .renderable
-            .sample(rng, &new_hit_record, scene, depth - 1);
-        let bounce_elapsed = bounce_start.elapsed();
-
-        tracker::add_sample_stat(tracker::Stat::new(
-            tracker::METALLIC_SAMPLE,
-            sample_start
-                .elapsed()
-                .saturating_sub(hit_elapsed + bounce_elapsed),
-        ));
-
-        return self.albedo * bounce;
+    fn emit(&self, _hit_record: &hittable::HitRecord) -> vec::Vec3 {
+        vec::Vec3::new(0.0, 0.0, 0.0)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

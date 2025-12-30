@@ -1,5 +1,5 @@
 width = 600
-samples = 10000
+samples = 100
 depth = 50
 volumes = []
 

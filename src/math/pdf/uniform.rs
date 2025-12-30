@@ -1,4 +1,4 @@
-use crate::math::{vec, pdf};
+use crate::math::{pdf, vec};
 
 pub struct UniformPDF {}
 

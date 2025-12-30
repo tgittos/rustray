@@ -1,5 +1,5 @@
-pub mod phase;
 pub mod cosine;
+pub mod phase;
 pub mod uniform;
 
 use rand::Rng;
@@ -25,9 +25,7 @@ pub struct MixturePDF<'a> {
 
 impl<'a> MixturePDF<'a> {
     pub fn new() -> Self {
-        MixturePDF {
-            mixes: Vec::new(),
-        }
+        MixturePDF { mixes: Vec::new() }
     }
 
     pub fn add(&mut self, pdf: Box<dyn PDF + Send + Sync + 'a>, weight: f32) {

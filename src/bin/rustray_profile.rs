@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::time;
 
 use rustray::core::scene;
-use rustray::stats::{charts, tracker};
+use rustray::stats::charts;
 use rustray::{raytrace, raytrace_concurrent};
 
 // const SAMPLES: &[u32] = &[10, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
@@ -49,8 +49,6 @@ fn main() {
     };
 
     let mut wall_times = Vec::new();
-    let mut hit_times = Vec::new();
-    let mut sample_times = Vec::new();
 
     for &ns in SAMPLES.iter() {
         render.samples = ns;
@@ -81,10 +79,6 @@ fn main() {
         };
 
         wall_times.push(render_start.elapsed());
-
-        let stats = tracker::get_stats();
-        hit_times.push(stats.total_hit_time());
-        sample_times.push(stats.total_sample_time());
 
         let filename = if is_concurrent {
             format!(
@@ -118,31 +112,13 @@ fn main() {
         }
     }
 
-    // write profile data as chart
-    let total_stats = wall_times
-        .iter()
-        .map(|&t| tracker::Stat::new("Total", t))
-        .collect::<Vec<tracker::Stat>>();
-
-    // avg hit times and sample times w/ CPU count if concurrent
-    if is_concurrent {
-        for t in hit_times.iter_mut() {
-            *t = *t / num_cpus::get() as u32;
-        }
-        for t in sample_times.iter_mut() {
-            *t = *t / num_cpus::get() as u32;
-        }
-    }
-
     match charts::chart(
         scene_path
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("output"),
         &SAMPLE_LABELS.to_vec(),
-        &hit_times,
-        &sample_times,
-        &total_stats.iter().map(|s| s.value).collect(),
+        &wall_times,
         is_concurrent,
     ) {
         Ok(_) => println!("Render profile chart saved."),

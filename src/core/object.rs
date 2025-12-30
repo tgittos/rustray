@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
-use crate::core::{bbox, ray, scene};
+use crate::core::{bbox, ray};
 use crate::geometry::instance::GeometryInstance;
 use crate::materials::instance::MaterialInstance;
 use crate::math::{interval, vec};
 use crate::traits::hittable::Hittable;
 use crate::traits::renderable::Renderable;
-use crate::traits::sampleable::Sampleable;
-use crate::traits::{hittable, sampleable};
+use crate::traits::scatterable::Scatterable;
+use crate::traits::{hittable, scatterable};
 
-/// A concrete implementation of the Renderable trait that combines a Hittable and a Sampleable.
-/// This struct allows any object that implements both Hittable and Sampleable to be treated as a Renderable.
+/// A concrete implementation of the Renderable trait that combines a Hittable and a Scatterable.
+/// This struct allows any object that implements both Hittable and Scatterable to be treated as a Renderable.
 ///
 /// # Fields
 /// [`hittable::Hittable`] hittable - The hittable component of the renderable.
-/// [`sampleable::Sampleable`] sampleable - The sampleable component of the renderable.
+/// [`scatterable::Scatterable`] scatterable - The scatterable component of the renderable.
 pub struct RenderObject {
     /// Geometry that can be intersected.
     pub geometry_instance: GeometryInstance,
@@ -22,21 +22,21 @@ pub struct RenderObject {
 }
 
 impl RenderObject {
-    /// Creates a new RenderObject from given Hittable and Sampleable objects.
+    /// Creates a new RenderObject from given Hittable and Scatterable objects.
     ///
     /// # Arguments
     /// * `hittable` - The hittable object.
-    /// * `sampleable` - The sampleable object.
+    /// * `scatterable` - The scatterable object.
     pub fn new(
         hittable: Arc<dyn hittable::Hittable + Send + Sync>,
-        sampleable: Arc<dyn sampleable::Sampleable + Send + Sync>,
+        scatterable: Arc<dyn scatterable::Scatterable + Send + Sync>,
     ) -> Self {
         let geometry_instance = GeometryInstance {
             ref_obj: hittable,
             transforms: Vec::new(),
         };
         let material_instance = MaterialInstance {
-            ref_mat: sampleable,
+            ref_mat: scatterable,
             albedo: None,
         };
         RenderObject {
@@ -75,14 +75,17 @@ impl Renderable for RenderObject {
         self.geometry_instance.get_pdf(origin, time)
     }
 
-    fn sample(
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord<'_>,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
-        self.material_instance.sample(rng, hit_record, scene, depth)
+    ) -> Option<scatterable::ScatterRecord> {
+        self.material_instance.scatter(rng, hit_record, depth)
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord<'_>) -> vec::Vec3 {
+        self.material_instance.emit(hit_record)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

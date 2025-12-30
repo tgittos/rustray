@@ -47,7 +47,7 @@ fn main() {
         println!(
             "Rendering a {}x{} image with {} samples per pixel and max depth {} using {} threads",
             render.width,
-            render.width as f32 * render.camera.aspect_ratio,
+            render.width as f32 / render.camera.aspect_ratio,
             render.samples,
             render.depth,
             cpus
@@ -57,7 +57,7 @@ fn main() {
         println!(
             "Rendering a {}x{} image with {} samples per pixel and max depth {}",
             render.width,
-            render.width as f32 * render.camera.aspect_ratio,
+            render.width as f32 / render.camera.aspect_ratio,
             render.samples,
             render.depth
         );

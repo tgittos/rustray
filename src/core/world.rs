@@ -1,9 +1,9 @@
 //! Procedural sky gradient that acts as both geometry and material.
 use serde::{Deserialize, Serialize};
 
-use crate::core::{bbox, ray, scene};
-use crate::math::{vec, pdf};
-use crate::traits::{hittable, renderable, sampleable};
+use crate::core::{bbox, ray};
+use crate::math::{pdf, vec};
+use crate::traits::{hittable, renderable, scatterable};
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 /// Background gradient defined by top and bottom colors.
@@ -60,15 +60,18 @@ impl hittable::Hittable for World {
     }
 }
 
-impl sampleable::Sampleable for World {
-    /// Samples a vertical gradient based on the hit point's direction.
-    fn sample(
+impl scatterable::Scatterable for World {
+    /// Emits a vertical gradient based on the ray direction.
+    fn scatter(
         &self,
         _rng: &mut rand::rngs::ThreadRng,
-        hit_record: &hittable::HitRecord<'_>,
-        _scene: &scene::Scene,
+        _hit_record: &hittable::HitRecord<'_>,
         _depth: u32,
-    ) -> vec::Vec3 {
+    ) -> Option<scatterable::ScatterRecord> {
+        None
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord<'_>) -> vec::Vec3 {
         let unit_direction = vec::unit_vector(&hit_record.hit.ray.direction);
         let t = 0.5 * (unit_direction.y + 1.0);
         self.bottom_color * (1.0 - t) + self.top_color * t
@@ -105,22 +108,21 @@ impl renderable::Renderable for World {
         )
     }
 
-    fn get_pdf(
-        &self,
-        origin: &vec::Point3,
-        time: f64,
-    ) -> Box<dyn pdf::PDF + Send + Sync + '_> {
+    fn get_pdf(&self, origin: &vec::Point3, time: f64) -> Box<dyn pdf::PDF + Send + Sync + '_> {
         (self as &dyn hittable::Hittable).get_pdf(origin, time)
     }
 
-    fn sample(
+    fn scatter(
         &self,
         rng: &mut rand::rngs::ThreadRng,
         hit_record: &hittable::HitRecord<'_>,
-        scene: &scene::Scene,
         depth: u32,
-    ) -> vec::Vec3 {
-        (self as &dyn sampleable::Sampleable).sample(rng, hit_record, scene, depth)
+    ) -> Option<scatterable::ScatterRecord> {
+        (self as &dyn scatterable::Scatterable).scatter(rng, hit_record, depth)
+    }
+
+    fn emit(&self, hit_record: &hittable::HitRecord<'_>) -> vec::Vec3 {
+        (self as &dyn scatterable::Scatterable).emit(hit_record)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
