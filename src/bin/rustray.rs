@@ -15,22 +15,74 @@ fn main() {
 
     let mut args = env::args();
     let program_name = args.next().unwrap_or_else(|| String::from("rustray"));
-    let scene_path = args
-        .next()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("scenes/bouncing_spheres.toml"));
-    let is_concurrent = args.next().map(|s| s == "--concurrent").unwrap_or(false);
+    let mut scene_path: Option<PathBuf> = None;
+    let mut is_concurrent = false;
+    let mut samples_override: Option<u32> = None;
+
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--concurrent" => {
+                is_concurrent = true;
+            }
+            "--spp" => {
+                let value = args.next().unwrap_or_default();
+                if value.is_empty() {
+                    eprintln!(
+                        "Missing value for --spp. Usage: {} [scene-file] [--concurrent] [--spp <samples>]",
+                        program_name
+                    );
+                    std::process::exit(1);
+                }
+                match value.parse::<u32>() {
+                    Ok(samples) => samples_override = Some(samples),
+                    Err(err) => {
+                        eprintln!("Invalid value for --spp ({}): {}", value, err);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            _ if arg.starts_with("--spp=") => {
+                let value = arg.trim_start_matches("--spp=");
+                match value.parse::<u32>() {
+                    Ok(samples) => samples_override = Some(samples),
+                    Err(err) => {
+                        eprintln!("Invalid value for --spp ({}): {}", value, err);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            _ if arg.starts_with("--") => {
+                eprintln!(
+                    "Unknown option: {}. Usage: {} [scene-file] [--concurrent] [--spp <samples>]",
+                    arg, program_name
+                );
+                std::process::exit(1);
+            }
+            _ => {
+                if scene_path.is_some() {
+                    eprintln!(
+                        "Unexpected extra argument: {}. Usage: {} [scene-file] [--concurrent] [--spp <samples>]",
+                        arg, program_name
+                    );
+                    std::process::exit(1);
+                }
+                scene_path = Some(PathBuf::from(arg));
+            }
+        }
+    }
+
+    let scene_path = scene_path.unwrap_or_else(|| PathBuf::from("scenes/bouncing_spheres.toml"));
 
     if !scene_path.is_file() {
         eprintln!(
-            "Scene file not found: {}. Usage: {} <scene-file>",
+            "Scene file not found: {}. Usage: {} [scene-file] [--concurrent] [--spp <samples>]",
             scene_path.display(),
             program_name
         );
         std::process::exit(1);
     }
 
-    let render = match scene::load_from_file(&mut rng, scene_path.as_path()) {
+    let mut render = match scene::load_from_file(&mut rng, scene_path.as_path()) {
         Ok(result) => result,
         Err(err) => {
             eprintln!(
@@ -41,6 +93,10 @@ fn main() {
             std::process::exit(1);
         }
     };
+
+    if let Some(samples) = samples_override {
+        render.samples = samples;
+    }
 
     let data = if is_concurrent {
         let cpus = num_cpus::get();
