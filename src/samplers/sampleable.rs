@@ -1,7 +1,12 @@
-use std::any::Any;
 use crate::math::vec;
 
 pub trait Sampleable {
-    fn sample(&self) -> vec::Vec3;
-    fn as_any(&self) -> &dyn Any;
+    fn sample_pixel(
+        &self,
+        rng: &mut rand::rngs::ThreadRng,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    ) -> vec::Vec3;
 }

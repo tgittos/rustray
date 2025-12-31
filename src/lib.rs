@@ -6,11 +6,11 @@ pub mod core;
 pub mod geometry;
 pub mod materials;
 pub mod math;
+pub mod samplers;
 pub mod stats;
 pub mod textures;
 pub mod traits;
 
-use rand::Rng;
 use rayon::prelude::*;
 use std::time;
 
@@ -19,6 +19,8 @@ use crate::core::render;
 use crate::core::scene;
 use crate::math::pdf;
 use crate::math::vec;
+use crate::samplers::monte_carlo::MonteCarloSampler;
+use crate::samplers::sampleable::Sampleable;
 use crate::traits::renderable::Renderable;
 
 #[derive(Clone, Copy)]
@@ -122,31 +124,20 @@ pub(crate) fn raytrace_chunk(
     render: &render::Render,
     bounds: ChunkBounds,
 ) -> ChunkOutput {
-    let height = image_height(render) as f32;
-    let sqrt_n = (render.samples.max(1) as f32).sqrt() as u32;
-    let ns = sqrt_n * sqrt_n; // Ensure ns is a perfect square
-    let pss = 1.0 / (ns as f32);
-    let recip_sqrt_n = 1.0 / (sqrt_n as f32);
-    let max_depth = render.depth;
+    let height = image_height(render);
+    let sampler = MonteCarloSampler::new(
+        render.samples,
+        render.depth,
+        &render.camera,
+        &render.scene,
+        trace_ray,
+    );
     let row_width = bounds.width() as usize * 3;
     let mut data = Vec::with_capacity(row_width * bounds.height() as usize);
 
     for y in bounds.y_start..bounds.y_end {
         for x in bounds.x_start..bounds.x_end {
-            let mut col = vec::Vec3::new(0.0, 0.0, 0.0);
-
-            for i in 0..sqrt_n {
-                for j in 0..sqrt_n {
-                    let u = (x as f32 + (i as f32 + rng.random::<f32>()) * recip_sqrt_n)
-                        / render.width as f32;
-                    let v = (y as f32 + (j as f32 + rng.random::<f32>()) * recip_sqrt_n) / height;
-
-                    let r = render.camera.get_ray(rng, u, v);
-                    col = col + trace_ray(rng, &render.scene, &r, max_depth);
-                }
-            }
-
-            col = col * pss;
+            let mut col = sampler.sample_pixel(rng, x, y, render.width, height);
             col = col.sqrt(); // Gamma correction
 
             data.push((col.x * 255.99) as u8);

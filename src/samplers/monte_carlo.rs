@@ -1,83 +1,71 @@
-use crate::core::{camera, object, ray};
-use crate::traits::hittable;
-use crate::samplers::sampleable;
+use rand::Rng;
+
+use crate::core::{camera, ray, scene};
+use crate::math::vec;
+use crate::samplers::sampleable::Sampleable;
+
+pub type TraceRay =
+    fn(&mut rand::rngs::ThreadRng, &scene::Scene, &ray::Ray, u32) -> vec::Vec3;
 
 pub struct MonteCarloSampler<'a> {
-    rng: rand::rngs::ThreadRng,
+    trace: TraceRay,
     spp: u32,
     spp_sqrt: u32,
     max_depth: u32,
     camera: &'a camera::Camera,
-    objects: &'a object::Renderables,
-    lights: &'a object::Renderables,
+    scene: &'a scene::Scene,
 }
 
-impl MonteCarloSampler<'_> {
+impl<'a> MonteCarloSampler<'a> {
     pub fn new(
-        &mut rng: rand::rngs::ThreadRng,
         samples_per_pixel: u32,
         max_depth: u32,
-        camera: &camera::Camera,
-        objects: &object::Renderables,
-        lights: &object::Renderables,
+        camera: &'a camera::Camera,
+        scene: &'a scene::Scene,
+        trace: TraceRay,
     ) -> Self {
-        let (spp_sqrt, spp) = square_spp(samples_per_pixel);
+        let (spp_sqrt, spp) = square_spp(samples_per_pixel.max(1));
         MonteCarloSampler {
-            rng,
+            trace,
             spp,
             spp_sqrt,
             max_depth,
             camera,
-            objects,
-            lights,
+            scene,
         }
     }
 }
 
-impl sampleable::Sampleable for MonteCarloSampler<'_> {
-    fn sample(&self) -> crate::math::vec::Vec3 {
-        // stratified and jittered sampling
+impl Sampleable for MonteCarloSampler<'_> {
+    fn sample_pixel(
+        &self,
+        rng: &mut rand::rngs::ThreadRng,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    ) -> vec::Vec3 {
+        let recip_spp_sqrt = 1.0 / self.spp_sqrt as f32;
+        let recip_spp = 1.0 / self.spp as f32;
+        let mut col = vec::Vec3::new(0.0, 0.0, 0.0);
+
         for i in 0..self.spp_sqrt {
             for j in 0..self.spp_sqrt {
-                let u = (i as f32 + self.rng.random::<f32>()) / self.spp_sqrt as f32;
-                let v = (j as f32 + self.rng.random::<f32>()) / self.spp_sqrt as f32;
+                let u =
+                    (x as f32 + (i as f32 + rng.random::<f32>()) * recip_spp_sqrt) / width as f32;
+                let v = (y as f32 + (j as f32 + rng.random::<f32>()) * recip_spp_sqrt)
+                    / height as f32;
 
-                // apply camera model to get ray
-                let origin = self.camera.get_ray(&mut self.rng, u, v);
-                let ray = ray::Ray::new(
-                    &origin.origin,
-                    &origin.direction,
-                    Some(origin.time),
-                );
+                let r = self.camera.get_ray(rng, u, v);
+                col = col + (self.trace)(rng, self.scene, &r, self.max_depth);
             }
         }
+
+        col * recip_spp
     }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-}
-
-fn hit_objects<'a>(
-    objects: &'a object::Renderables,
-    ray: &'a ray::Ray,
-    t_min: f32,
-    t_max: f32,
-) -> Option<hittable::Hit<'a>> {
-    let mut closest_so_far = t_max;
-    let mut hit_record: Option<hittable::Hit<'a>> = None;
-
-    for obj in objects.iter() {
-        if let Some(temp_hit) = obj.hit(ray, t_min, closest_so_far) {
-            closest_so_far = temp_hit.t;
-            hit_record = Some(temp_hit);
-        }
-    }
-
-    hit_record
 }
 
 fn square_spp(spp: u32) -> (u32, u32) {
-    let sqrt = (spp as f32).sqrt().ceil() as u32;
+    let sqrt = (spp as f32).sqrt() as u32;
     (sqrt, sqrt * sqrt)
 }
