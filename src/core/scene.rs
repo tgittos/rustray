@@ -41,39 +41,29 @@ impl Scene {
         self.bvh = Some(bvh::Bvh::new(rng, &self.renderables.objects));
     }
 
-    fn apply_light_pdf<'a>(
+    pub(crate) fn light_pdf<'a, 'b>(
         &'a self,
-        hit_record: hittable::HitRecord<'a>,
-    ) -> hittable::HitRecord<'a> {
-        let mut mixed_pdf = pdf::MixturePDF::new();
-        if hit_record.hit.normal.squared_length() <= f32::EPSILON {
-            mixed_pdf.add(Box::new(pdf::uniform::UniformPDF {}), 1.0);
-            return hittable::HitRecord {
-                hit: hit_record.hit,
-                pdf: Box::new(mixed_pdf),
-                renderable: hit_record.renderable,
-            };
-        }
-
-        let cosine_pdf = pdf::cosine::CosinePDF::new(&hit_record.hit.normal);
+        hit_record: &hittable::HitRecord<'a>,
+        scatter_pdf: &'b (dyn pdf::PDF + Send + Sync),
+    ) -> Option<pdf::MixturePDF<'b>>
+    where
+        'a: 'b,
+    {
         if self.lights.is_empty() {
-            mixed_pdf.add(Box::new(cosine_pdf), 1.0);
-        } else {
-            mixed_pdf.add(Box::new(cosine_pdf), 0.5);
-            let light_weight = 0.5 / self.lights.len() as f32;
-            for light in self.lights.iter() {
-                mixed_pdf.add(
-                    light.get_pdf(&hit_record.hit.point, hit_record.hit.ray.time),
-                    light_weight,
-                );
-            }
+            return None;
         }
 
-        hittable::HitRecord {
-            hit: hit_record.hit,
-            pdf: Box::new(mixed_pdf),
-            renderable: hit_record.renderable,
+        let mut mixed_pdf = pdf::MixturePDF::new();
+        mixed_pdf.add_ref(scatter_pdf, 0.5);
+        let light_weight = 0.5 / self.lights.len() as f32;
+        for light in self.lights.iter() {
+            mixed_pdf.add(
+                light.get_pdf(&hit_record.hit.point, hit_record.hit.ray.time),
+                light_weight,
+            );
         }
+
+        Some(mixed_pdf)
     }
 }
 
@@ -81,9 +71,7 @@ impl renderable::Renderable for Scene {
     /// Finds the closest intersection among scene objects.
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<hittable::HitRecord<'_>> {
         if let Some(bvh) = &self.bvh {
-            return bvh
-                .hit(&self.renderables.objects, ray, t_min, t_max)
-                .map(|record| self.apply_light_pdf(record));
+            return bvh.hit(&self.renderables.objects, ray, t_min, t_max);
         }
 
         let mut closest_so_far = t_max;
@@ -100,7 +88,7 @@ impl renderable::Renderable for Scene {
             }
         }
 
-        hit_record.map(|record| self.apply_light_pdf(record))
+        hit_record
     }
 
     /// Returns the bounding box of the scene, which is either the BVH's bounding box

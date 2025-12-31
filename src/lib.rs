@@ -6,9 +6,9 @@ pub mod core;
 pub mod geometry;
 pub mod materials;
 pub mod math;
+pub mod stats;
 pub mod textures;
 pub mod traits;
-pub mod stats;
 
 use rand::Rng;
 use rayon::prelude::*;
@@ -17,6 +17,7 @@ use std::time;
 use crate::core::ray;
 use crate::core::render;
 use crate::core::scene;
+use crate::math::pdf;
 use crate::math::vec;
 use crate::traits::renderable::Renderable;
 
@@ -169,9 +170,8 @@ fn trace_ray(
     let mut remaining_depth = max_depth;
 
     loop {
-        let maybe_hit = scene.hit(&current_ray, 0.001, f32::MAX);
-
-        let Some(hit_record) = maybe_hit else {
+        let Some(hit_record) = scene.hit(&current_ray, 0.001, f32::MAX) else {
+            // no hit, no color contribution
             break;
         };
 
@@ -202,28 +202,36 @@ fn trace_ray(
             break;
         };
 
-        let scatter_direction = if scatter_record.use_light_pdf {
-            hit_record.pdf.generate(rng)
+        let mut mixed_pdf: Option<pdf::MixturePDF<'_>> = None;
+        let sample_pdf: &dyn pdf::PDF = if scatter_record.use_light_pdf {
+            if let Some(pdf) = scene.light_pdf(&hit_record, scatter_pdf.as_ref()) {
+                mixed_pdf = Some(pdf);
+                mixed_pdf.as_ref().unwrap()
+            } else {
+                scatter_pdf.as_ref()
+            }
         } else {
-            scatter_pdf.generate(rng)
+            scatter_pdf.as_ref()
         };
+
+        let scatter_direction = sample_pdf.generate(rng);
         let scattered_ray = ray::Ray::new(
             &hit_record.hit.point,
             &scatter_direction,
             Some(hit_record.hit.ray.time),
         );
 
-        let pdf_value = if scatter_record.use_light_pdf {
-            hit_record.pdf.value(scattered_ray.direction)
-        } else {
-            scatter_pdf.value(scattered_ray.direction)
-        };
+        let pdf_value = sample_pdf.value(scattered_ray.direction);
         if pdf_value <= 0.0 {
             break;
         }
 
-        let scattering_pdf = scatter_pdf.value(scattered_ray.direction);
-        throughput = throughput * scatter_record.attenuation * scattering_pdf / pdf_value;
+        if scatter_record.use_light_pdf && mixed_pdf.is_some() {
+            let scattering_pdf = scatter_pdf.value(scattered_ray.direction);
+            throughput = throughput * scatter_record.attenuation * scattering_pdf / pdf_value;
+        } else {
+            throughput = throughput * scatter_record.attenuation;
+        }
         current_ray = scattered_ray;
     }
 

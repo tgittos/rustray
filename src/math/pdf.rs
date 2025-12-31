@@ -12,6 +12,21 @@ pub trait PDF {
     fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3;
 }
 
+/// Borrowed PDF wrapper for building mixtures without taking ownership.
+struct PDFRef<'a> {
+    pdf: &'a (dyn PDF + Send + Sync),
+}
+
+impl PDF for PDFRef<'_> {
+    fn value(&self, direction: vec::Vec3) -> f32 {
+        self.pdf.value(direction)
+    }
+
+    fn generate(&self, rng: &mut rand::rngs::ThreadRng) -> vec::Vec3 {
+        self.pdf.generate(rng)
+    }
+}
+
 /// Single PDF with an associated weight for mixture
 pub struct PDFMix<'a> {
     pub pdf: Box<dyn PDF + Send + Sync + 'a>,
@@ -30,6 +45,14 @@ impl<'a> MixturePDF<'a> {
 
     pub fn add(&mut self, pdf: Box<dyn PDF + Send + Sync + 'a>, weight: f32) {
         self.mixes.push(PDFMix { pdf, weight });
+        self.balance_weights();
+    }
+
+    pub(crate) fn add_ref(&mut self, pdf: &'a (dyn PDF + Send + Sync), weight: f32) {
+        self.mixes.push(PDFMix {
+            pdf: Box::new(PDFRef { pdf }),
+            weight,
+        });
         self.balance_weights();
     }
 
